@@ -251,7 +251,7 @@ These are read by docker compose itself, not by the program.
 | `AUDIT_ARCHIVE_HOST_PATH` | `<project>/data/audit-archive` | Only shown in the portal (see `SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH`). |
 | `BACKUP_HOST_PATH` | `<project>/data/backups` | Only shown in the portal. |
 | `BACKUP_DIR` | `./data/backups` | The host folder mounted at `/backups`: the only place backups may go. To save on a USB disk or a share, mount it **inside** this folder. |
-| `COMPOSE_PROFILES` | not set | `autoupdate` starts the optional `updater` container (the "Update" button in the portal; it needs the Docker socket, read the warning in [installation.md](installation.md) first). |
+| `COMPOSE_PROFILES` | `none` | `autoupdate` starts the optional `updater` container (the "Update" button in the portal; it needs the Docker socket, read the warning in [installation.md](installation.md) first). |
 | `FORWARDED_ALLOW_IPS` | not set | Only behind a reverse proxy: the proxy's address, so the gateway trusts `X-Forwarded-For` (see [certificates.md](certificates.md#41-behind-a-reverse-proxy)). |
 
 ### Certificate synchronisation (`CERT_SYNC_*`)

@@ -121,11 +121,11 @@ fuori dal server e di tenere `.env` e `config/`; il portale parte solo con la ca
 sempre dal registry del tuo `.env`. Per accenderlo:
 
 ```sh
-echo "COMPOSE_PROFILES=autoupdate" >> .env      # una riga in .env (oppure aggiungi --profile autoupdate ogni volta)
+sed -i 's/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=autoupdate/' .env      # oppure cambia quella riga in .env
 docker compose up -d
 ```
 
-Per spegnerlo: togli la riga da `.env` ed esegui `docker compose stop updater`. Se non vuoi quel rischio, usa `scripts/update.sh`.
+Per spegnerlo: rimetti `COMPOSE_PROFILES=none` in `.env` ed esegui `docker compose rm -sf updater`. Se non vuoi quel rischio, usa `scripts/update.sh`.
 
 **Tornare a una versione precedente.** `scripts/update.sh <versione>` rimette i file e le immagini di quella versione, **solo da terminale**: il pulsante del portale va solo avanti (il gateway è esposto alla rete e non deve poter installare una versione con una falla nota). Una versione più vecchia parte su un database che una più nuova ha migrato solo se quelle migrazioni lo hanno lasciato leggibile;
 quando non parte, o la nuova ha rovinato qualcosa, usa il backup che `update.sh` ha fatto **prima** dell'aggiornamento:

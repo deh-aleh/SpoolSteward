@@ -121,11 +121,11 @@ the portal starts only with the box ticked, `update.sh` only after `YES`. Read t
 `.env`. Turn it on with:
 
 ```sh
-echo "COMPOSE_PROFILES=autoupdate" >> .env      # one line in .env (or add --profile autoupdate every time)
+sed -i 's/^COMPOSE_PROFILES=.*/COMPOSE_PROFILES=autoupdate/' .env      # or edit that line in .env
 docker compose up -d
 ```
 
-To turn it off: remove the line from `.env` and run `docker compose stop updater`. If you do not want that risk, use `scripts/update.sh`.
+To turn it off: put `COMPOSE_PROFILES=none` back in `.env` and run `docker compose rm -sf updater`. If you do not want that risk, use `scripts/update.sh`.
 
 **Going back to an older version.** `scripts/update.sh <version>` puts that version's files and images back, **only from a terminal**: the portal button goes forward only (the gateway faces the network and must not be able to install a version with a known flaw). An older version starts on a database a newer one migrated only if those migrations kept it readable;
 when it does not start, or the new version damaged something, use the backup that `update.sh` made **before** the update:

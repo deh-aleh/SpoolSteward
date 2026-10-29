@@ -251,7 +251,7 @@ Le legge docker compose stesso, non il programma.
 | `AUDIT_ARCHIVE_HOST_PATH` | `<progetto>/data/audit-archive` | Solo mostrata nel portale (vedi `SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH`). |
 | `BACKUP_HOST_PATH` | `<progetto>/data/backups` | Solo mostrata nel portale. |
 | `BACKUP_DIR` | `./data/backups` | La cartella dell'host montata su `/backups`: l'unico posto in cui possono andare i backup. Per salvare su un disco USB o una condivisione, montala **dentro** questa cartella. |
-| `COMPOSE_PROFILES` | non impostata | `autoupdate` avvia il contenitore facoltativo `updater` (il pulsante "Aggiorna" nel portale; richiede il socket di Docker: leggi prima l'avvertenza in [installazione.md](installazione.md)). |
+| `COMPOSE_PROFILES` | `none` | `autoupdate` avvia il contenitore facoltativo `updater` (il pulsante "Aggiorna" nel portale; richiede il socket di Docker: leggi prima l'avvertenza in [installazione.md](installazione.md)). |
 | `FORWARDED_ALLOW_IPS` | non impostata | Solo dietro un reverse proxy: l'indirizzo del proxy, perché il gateway si fidi di `X-Forwarded-For` (vedi [certificati.md](certificati.md#41-dietro-un-reverse-proxy)). |
 
 ### Sincronizzazione del certificato (`CERT_SYNC_*`)

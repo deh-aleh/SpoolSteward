@@ -120,3 +120,12 @@ def test_docker_init_writes_a_beta_the_way_the_images_are_tagged(tmp_path):
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\nversion = "0.4.2b3"\n')
     assert subprocess.run(["sh", "scripts/docker-init.sh"], cwd=tmp_path, capture_output=True).returncode == 0
     assert "SPOOLSTEWARD_VERSION=0.4.2-beta.3\n" in (tmp_path / ".env").read_text()
+
+
+def test_the_updater_is_off_in_the_template_and_needs_its_profile():
+    """The template says so in the file (COMPOSE_PROFILES=none) and the updater only starts with the profile that is named there."""
+    options = dict(active_options())
+    assert options.get("COMPOSE_PROFILES") == "none"
+    compose = (ROOT / "docker-compose.yml").read_text()
+    updater = compose.split("\n  updater:", 1)[1].split("\n  radius:", 1)[0]
+    assert "profiles: [autoupdate]" in updater
