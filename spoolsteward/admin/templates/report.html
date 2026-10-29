@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Report") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block body %}
+<div class="card">
+  <h1>{{ _("Usage report") }}</h1>
+  <p class="muted">{{ _("Who printed most in a period. It counts the prints that used paper (completed, waiting or running); scans are not included. Prints that were already moved to the compressed archive are not in the report.") }}</p>
+  <form method="get" action="/admin/report">
+    <button hidden tabindex="-1" aria-hidden="true"></button>{# Enter in a box presses this one, not the first period button #}
+    <fieldset class="rp-set">
+      <legend>{{ _("Period") }}</legend>
+      <div class="rp-presets">
+        {% set names = {"today": _("Today"), "last7": _("Last 7 days"), "month": _("This month"), "last-month": _("Last month"), "last30": _("Last 30 days"), "year": _("This year")} %}
+        {% for key, on in periods %}<button class="sec{% if on %} on{% endif %}" name="period" value="{{ key }}" aria-pressed="{{ 'true' if on else 'false' }}">{{ names[key] }}</button>{% endfor %}
+      </div>
+      <div class="row">
+        <label>{{ _("From") }} <input type="text" name="start" value="{{ f.start }}" class="rp-date" inputmode="numeric" maxlength="10" placeholder="2026-10-01" pattern="\d{4}-\d{2}-\d{2}" autocomplete="off"></label>
+        <label>{{ _("To (included)") }} <input type="text" name="end" value="{{ f.end }}" class="rp-date" inputmode="numeric" maxlength="10" placeholder="2026-10-31" pattern="\d{4}-\d{2}-\d{2}" autocomplete="off"></label>
+      </div>
+      <p class="muted rp-hint">{{ _("Dates are written year-month-day, for example 2026-10-31.") }}</p>
+    </fieldset>
+    <div class="row">
+      <label>{{ _("Show the first … users") }} <input type="number" name="top" min="1" max="{{ max_top }}" value="{{ f.top }}" placeholder="{{ _('all') }}" class="rp-top"></label>
+    </div>
+    <p><label><input type="checkbox" name="detail" value="1" {% if detail %}checked{% endif %}> {{ _("Detailed report: also how many prints each user made on each printer") }}</label></p>
+    {% if groups %}
+    <fieldset class="rp-set">
+      <legend>{{ _("Leave out these groups") }}</legend>
+      {% for gid, gname in groups %}<label class="rp-excl"><input type="checkbox" name="exclude" value="{{ gid }}" {% if gid in exclude %}checked{% endif %}> {{ gname }}</label>{% endfor %}
+    </fieldset>
+    {% endif %}
+    <div class="row">
+      <button>{{ _("Show") }}</button>
+      <button class="sec" name="format" value="csv" formaction="/admin/report/download">{{ _("Download CSV") }}</button>
+      <button class="sec" name="format" value="pdf" formaction="/admin/report/download">{{ _("Download PDF") }}</button>
+    </div>
+    <p class="muted">{{ _("The PDF is in English and can only show Western letters (other characters appear as ?): the CSV has every name as it is.") }}</p>
+  </form>
+</div>
+{% if data %}
+<div class="card">
+  {% if archived %}<p class="flash err">{{ _("The period reaches back before the oldest row of the active audit: older prints are in the archive and are not counted here.") }}</p>{% endif %}
+  <p>{{ ngettext("%(n)s user", "%(n)s users", data.total.users) }} · {{ _("%(jobs)s jobs", jobs=data.total.jobs) }} · {{ _("%(pages)s pages", pages=data.total.pages) }}
+    {% if data.cut %}<span class="muted"> — {{ _("only the first %(top)s are listed", top=f.top) }}</span>{% endif %}</p>
+  {% if data.users %}
+  <table class="stack">
+    <tr><th>#</th><th>{{ _("User") }}</th><th>{{ _("Group") }}</th><th>{{ _("Jobs") }}</th><th>{{ _("Pages") }}</th></tr>
+    {% for u in data.users %}
+    <tr><td>{{ loop.index }}</td><td><b>{{ u.name }}</b></td><td>{{ u.group or "—" }}</td><td>{{ u.jobs }}</td><td>{{ u.pages }}</td></tr>
+    {% for p in u.printers %}<tr class="muted"><td></td><td colspan="2">&nbsp;&nbsp;↳ {{ p.printer }}</td><td>{{ p.jobs }}</td><td>{{ p.pages }}</td></tr>{% endfor %}
+    {% endfor %}
+  </table>
+  {% else %}<p>{{ _("No prints in this period.") }}</p>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,49 @@
+{# The "Advanced permissions" block of the user and group pages. Needs `perm` (see accounts._permission_form). It sits inside
+   the page's own form, before its Save button: one form, one button.
+   Every choice is one row of buttons (radio inputs drawn as a segmented control). The printers and the days only appear once
+   "only some printers" / "only at some hours" is chosen, so a printer can not be ticked while the list is not in use. #}
+{% from "macros.html" import seg %}
+<details class="adv" {{ 'open' if perm.open }}>
+  <summary>{{ _("Advanced permissions") }} <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+  <div class="advbody">
+    <input type="hidden" name="perm_form" value="1">
+    {% if perm.disabled %}<p><b>{{ _("All permissions, can not be limited.") }}</b> <span class="muted">{{ _("This is the emergency administrator: colour, one-sided prints, every printer and every hour are always allowed. The quotas above still apply.") }}</span></p>
+    {% elif perm.inherit %}<p class="muted">{{ _("Besides the quotas: what this user may print, and when. “As the group” follows the group's values. Scanning is not limited.") }}</p>
+    {% else %}<p class="muted">{{ _("Besides the quotas: what the members of this group may print, and when. A user can have values of their own. Scanning is not limited.") }}</p>{% endif %}
+    <fieldset {{ 'disabled' if perm.disabled }}>
+    <div class="permrow">
+      <div class="permhead">{{ _("Colour") }}<small>{{ _("Without it the prints come out in black and white.") }}</small></div>
+      {{ seg("perm_color", ([("", _("as the group (%(value)s)", value=perm.group.color))] if perm.inherit else []) + [("1", _("allowed")), ("0", _("not allowed"))], perm.color) }}
+    </div>
+    <div class="permrow">
+      <div class="permhead">{{ _("One-sided") }}<small>{{ _("Without it the prints come out double-sided, on the printers that can.") }}</small></div>
+      {{ seg("perm_one_sided", ([("", _("as the group (%(value)s)", value=perm.group.one_sided))] if perm.inherit else []) + [("1", _("allowed")), ("0", _("not allowed"))], perm.one_sided) }}
+    </div>
+    <div class="permrow">
+      <div class="permhead">{{ _("Printers") }}<small>{{ _("A printer added later is not allowed to someone with a list until you add it here.") }}</small></div>
+      {{ seg("perm_printers", ([("", _("as the group (%(value)s)", value=perm.group.printers))] if perm.inherit else []) + [("all", _p("printers", "all")), ("list", _p("printers", "only some"))], perm.printers_mode) }}
+      <div class="permsub" data-show="perm_printers" data-value="list">
+        <div class="chips">
+          {% for q in perm.queues %}<label class="chip"><input type="checkbox" name="perm_printer" value="{{ q.name }}" {{ 'checked' if q.checked }}><span><span class="mono">{{ q.name }}</span>{% if not q.present %} <i>({{ _("not present") }})</i>{% endif %}</span></label>
+          {% else %}<span class="muted">{{ _("No printer found right now.") }}</span>{% endfor %}
+        </div>
+        <small class="muted">{{ _("Tap the printers this account may use.") }}</small>
+      </div>
+    </div>
+    <div class="permrow">
+      <div class="permhead">{{ _("Hours") }}<small>{{ _("Checked when the job is sent, in the gateway's time zone.") }}</small></div>
+      {{ seg("perm_hours", ([("", _("as the group (%(value)s)", value=perm.group.hours))] if perm.inherit else []) + [("any", _("any time")), ("window", _("some hours"))], perm.hours_mode) }}
+      <div class="permsub" data-show="perm_hours" data-value="window">
+        <div class="chips days">
+          {% for i, name in perm.day_names %}<label class="chip"><input type="checkbox" name="perm_day" value="{{ i }}" {{ 'checked' if i in perm.days }}><span>{{ name }}</span></label>{% endfor %}
+        </div>
+        <div class="times">
+          <label>{{ _("from") }} <input type="time" name="perm_start" value="{{ perm.start }}"></label>
+          <label>{{ _("to") }} <input type="time" name="perm_end" value="{{ perm.end }}"></label>
+        </div>
+        <small class="muted">{{ _("An end earlier than the start goes past midnight (22:00 to 06:00): it belongs to the day it starts. The end time itself is not included.") }}</small>
+      </div>
+    </div>
+    </fieldset>
+  </div>
+</details>

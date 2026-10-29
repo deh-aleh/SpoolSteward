@@ -1,0 +1,40 @@
+# This directory doubles as the virtualenv: ignore its machinery, keep the project.
+/bin/
+/lib/
+/lib64
+/include/
+/pyvenv.cfg
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+
+# secrets and runtime state
+/certs/
+/.env
+*.db
+*.db-wal
+*.db-shm
+/docker/run/
+/config/
+/.env
+/certificati_test/
+/config/tls.selfsigned.bak/
+/data/
+tests/_out/
+
+# stale pinned list: pyproject.toml is the source of dependencies
+/requirement.txt
+
+# notes for whoever maintains the project (releases, development): local only
+/NOTE.md
+/TEST.md
+/.env.bak-*
+
+# update.sh working folders
+/.update-new/
+/.update-prev/
+*.pm-tmp
+/.venv/

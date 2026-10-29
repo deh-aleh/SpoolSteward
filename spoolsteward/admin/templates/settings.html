@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "macros.html" import stepper %}
+{% block title %}{{ _("Settings") }}{% endblock %}
+{% block body %}
+<div class="narrow">
+<div class="card">
+  <h1>{{ _("Settings") }}</h1>
+  <dl class="kv"><dt>{{ _("User") }}</dt><dd><b>{{ me.username }}</b></dd><dt>{{ _("Sign-in") }}</dt><dd>{{ _("local account") if me.provider == 'local' else _("RADIUS (%(provider)s)", provider=me.provider) }}</dd></dl>
+</div>
+<form class="card" method="post" action="/me/settings/theme">
+  <h2>{{ _("Appearance") }}</h2>
+  <div class="row">
+    <select name="theme" aria-label="{{ _('Theme') }}">{% for k, label in themes.items() %}<option value="{{ k }}" {{ 'selected' if me.theme == k }}>{{ _(label) }}</option>{% endfor %}</select>
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
+  </div>
+</form>
+<form class="card" method="post" action="/me/settings/language">
+  <h2>{{ _("Language") }}</h2>
+  <div class="row">
+    <select name="language" aria-label="{{ _('Language') }}">
+      <option value="" {{ 'selected' if not me.language }}>{{ _("Automatic (as the browser)") }}</option>
+      {% for code, name in languages.items() %}<option value="{{ code }}" lang="{{ code }}" {{ 'selected' if me.language == code }}>{{ name }}</option>{% endfor %}
+    </select>
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
+  </div>
+</form>
+<form class="card" method="post" action="/me/settings/notices">
+  <h2>{{ _("Secondary notices") }}</h2>
+  <p class="muted">{{ _("Notices about a single print that was changed for you (for example made in black and white or double-sided because your account has no permission) are marked as read by themselves after this many minutes, counted from the last one. They stay in the list under “Show dismissed too”. With 0 they stay until you dismiss them.") }}</p>
+  <div class="row">
+    {{ stepper("minutes", me.secondary_read_minutes, min=0, max=secondary_max, label=_("Minutes"), required=true) }} {{ _("minutes") }}
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
+  </div>
+</form>
+{% if me.is_admin %}
+<form class="card" method="post" action="/me/settings/refresh">
+  <h2>{{ _("Audit: automatic refresh") }}</h2>
+  <p class="muted">{{ _("How many seconds between the automatic reloads of the Audit page while its switch is on (it does not reload while you type in the filters or have a popup open). With 0 the switch starts off, and uses 30 seconds when you turn it on.") }}</p>
+  <div class="row">
+    {{ stepper("seconds", me.refresh_seconds, min=0, max=refresh_max, label=_("Seconds"), required=true) }} {{ _("seconds") }}
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
+  </div>
+</form>
+{% endif %}
+{% if me.provider == 'local' %}
+<form class="card pwform" method="post" action="/me/password">
+  <h2>{{ _("Change password") }}</h2>
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  {% with name="current", placeholder=_t('current password'), autocomplete="current-password" %}{% include "_pwfield.html" %}{% endwith %}
+  {% with name="new", placeholder=_t('new password (min. %(n)s)', n=password_min_length), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
+  {% with name="confirm", placeholder=_t('repeat the new one'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
+  <p><button class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4"/><path d="M10.5 12.5 20 3M16.5 6.5l3 3M13.5 9.5l2 2"/></svg>{{ _("Change password") }}</button></p>
+  <p class="muted">{{ _("Other sessions open with this account will be closed. Print keys stay valid.") }}</p>
+</form>
+{% else %}
+<div class="card"><h2>{{ _("Password") }}</h2><p class="muted">{{ _("Your password is managed by the RADIUS server: it cannot be changed here.") }}</p></div>
+{% endif %}
+</div>
+{% endblock %}

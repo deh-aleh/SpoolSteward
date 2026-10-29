@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Archive %(name)s", name=fname) }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% if a.source_table == 'job_log' %}<link rel="stylesheet" href="/admin/static/css/jobs.css?v={{ app_version }}">{% endif %}{% endblock %}
+{% block scripts %}{% if a.source_table == 'job_log' %}<script src="/admin/static/js/jobs.js?v={{ app_version }}"></script>{% endif %}{% endblock %}
+{% block mainattr %}{% if a.source_table == 'job_log' %} class="jb-main"{% endif %}{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="row gr-head"><h1 class="gr-title">{{ fname }}</h1><a class="ar-back" href="/admin/archive">← {{ _("all archives") }}</a></div>
+  <p class="muted">{{ _("%(n)s rows", n=a.rows) }} · {{ a.first_ts|localtime('%Y-%m-%d') }} → {{ a.last_ts|localtime('%Y-%m-%d') }} ·
+    <a href="/admin/archive/{{ a.id }}/download">{{ _("download the file") }}</a></p>
+  <form method="get" class="row av-form"><input type="text" name="q" value="{{ q }}" placeholder="{{ _('Search (user, file, state…)') }}"><button>{{ _("Search") }}</button> <span class="muted">{{ _("%(n)s results", n=total) }}</span></form>
+  <table{% if a.source_table == 'job_log' %} class="stack-md zebra"{% endif %}>
+    {% if a.source_table == 'job_log' %}
+    <tr><th>{{ _("No.") }}</th><th>{{ _("When") }}</th><th>{{ _("User") }}</th><th>{{ _("Device") }}</th><th>{{ _("Action") }}</th><th>{{ _("State") }}</th><th>{{ _("Pg.") }}</th><th>{{ _("File") }}</th><th>{{ _("Notes") }}</th></tr>
+    {% for r in rows %}{% set j = r.j %}{% set cancel = false %}
+    {% include "_audit_row.html" %}
+    {% else %}<tr><td colspan="9" class="muted">{{ _("No rows.") }}</td></tr>{% endfor %}
+    {% else %}
+    <tr><th>{{ _("When") }}</th><th>{{ _("Who") }}</th><th>{{ _("Action") }}</th><th>{{ _("Object") }}</th><th>{{ _("Details") }}</th></tr>
+    {% for r in rows %}<tr><td class="nowrap mono">{{ r.ts[:19].replace('T',' ') }}</td><td>{{ r.actor }}</td><td class="mono">{{ r.action }}</td><td>{{ r.target_type or '' }}{% if r.target_id %} #{{ r.target_id }}{% endif %}</td><td class="muted mono av-detail">{{ r.detail | tojson if r.detail else '' }}</td></tr>
+    {% else %}<tr><td colspan="5" class="muted">{{ _("No rows.") }}</td></tr>{% endfor %}
+    {% endif %}
+  </table>
+  {% if pages > 1 %}
+  <div class="row av-gap">
+    {% if page > 1 %}<a href="?q={{ q|urlencode }}&page={{ page-1 }}">← {{ _("Previous") }}</a>{% endif %}
+    <span class="muted">{{ _("Page %(page)s / %(pages)s", page=page, pages=pages) }}</span>
+    {% if page < pages %}<a href="?q={{ q|urlencode }}&page={{ page+1 }}">{{ _("Next") }} →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

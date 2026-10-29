@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Login") }}{% endblock %}
+{% block mainattr %} class="authmain"{% endblock %}
+{% block body %}
+<div class="card authbox">
+  {% include "_authbrand.html" %}
+  <form method="post" action="/login">
+    <input type="text" name="username" placeholder="{{ _('User') }}" aria-label="{{ _t('User') }}" autocomplete="username" autofocus required>
+    {% with name="password", placeholder=_t('Password'), autocomplete="current-password" %}{% include "_pwfield.html" %}{% endwith %}
+    <button class="primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M9 8l4 4-4 4M13 12H3"/></svg>{{ _("Log in") }}</button>
+  </form>
+  <p class="muted">{% if can_register %}{{ _('Log in with your company (RADIUS) or local account, or <a href="/register">register a local account</a>.') if radius_enabled else _('Log in with your local account or <a href="/register">register a local account</a>.') }}{% else %}{{ _("Log in with your company (RADIUS) or local account.") if radius_enabled else _("Log in with your local account.") }}{% endif %}</p>
+  {% if setup_pending %}<p class="muted"><a href="/setup">{{ _("First start: set the password of <b>%(user)s</b>", user=setup_user) }}</a></p>{% endif %}
+</div>
+{% endblock %}

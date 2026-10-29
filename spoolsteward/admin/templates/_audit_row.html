@@ -1,0 +1,54 @@
+{# One row of the audit table (live: /admin/jobs, archived: /admin/archive/N/view). `r` comes from admin/audit_view.py; `cancel`: show the Cancel button. #}
+{% from "macros.html" import copybox %}
+    <tr>
+      <td data-l="{{ _('No.') }}" class="mono muted">{{ j.id }}</td>
+      <td data-l="{{ _('When') }}" class="nowrap mono">{{ j.ts|localtime('%Y-%m-%d') }} {{ j.ts|localtime('%H:%M:%S') }}</td>
+      <td data-l="{{ _('User') }}" class="wrap">{{ r.name or '—' }}{% if r.guest %}
+        <button type="button" class="dots" title="{{ _('Where the scan came from') }}" aria-label="{{ _('Where the scan came from') }}" data-open-next>ⓘ</button>
+        <dialog>
+          <h2>{{ _("Scan without sign-in · no. %(id)s", id=j.id) }}</h2>
+          <p class="muted">{{ _("Whoever scanned did not sign in: they are recorded as “%(name)s”. This is all that is known about them.", name=r.name) }}</p>
+          <dl class="kv"><dt>{{ _("IP address") }}</dt><dd class="mono">{{ r.guest.ip }}</dd>
+            <dt>{{ _("Host name") }}</dt><dd class="mono">{{ r.guest.host or _('not available (no name registered in the DNS)') }}</dd></dl>
+          <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
+        </dialog>{% endif %}{% if r.win %}
+        <button type="button" class="dots" title="{{ _('Scan window') }}" aria-label="{{ _('Scan window') }}" data-open-next>ⓘ</button>
+        <dialog>
+          <h2>{{ _("Scan window · no. %(id)s", id=j.id) }}</h2>
+          {% if r.win.expected %}<p class="muted">{{ _("Refused: the window was opened for one address and the request came from another.") }}</p>
+          <dl class="kv"><dt>{{ _("Address the window was for") }}</dt><dd class="mono">{{ r.win.expected }}</dd>
+            <dt>{{ _("Address the request came from") }}</dt><dd class="mono">{{ r.win.got }}</dd></dl>
+          {% else %}<p class="muted">{{ _("The person pressed the scan window button, and this scan came from the address they opened it for.") }}</p>
+          <dl class="kv"><dt>{{ _("IP address") }}</dt><dd class="mono">{{ r.win.ip }}</dd>
+            <dt>{{ _("Host name") }}</dt><dd class="mono">{{ r.win.host or _('not available (no name registered in the DNS)') }}</dd></dl>{% endif %}
+          <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
+        </dialog>{% endif %}</td>
+      <td data-l="{{ _('Device') }}" class="wrap">{{ r.device }}</td>
+      <td data-l="{{ _('Action') }}">{% if r.scan %}{{ _("scan") }}{% if r.adf %}<div><span class="pill" title="{{ _('Scanned with the automatic document feeder (ADF)') }}">ADF</span></div>{% endif %}{% else %}{{ _("print") }}
+        <button type="button" class="dots" title="{{ _('Specifications of this print') }}" aria-label="{{ _('Specifications of this print') }}" data-open-next>ⓘ</button>
+        <dialog>
+          <h2>{{ _("Print specifications · no. %(id)s", id=j.id) }}</h2>
+          <dl class="kv">{% for label, value in r.specs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+          <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
+        </dialog>{% endif %}</td>
+      <td data-l="{{ _('State') }}"><span class="pill s-{{ j.state.value }}">{{ _(j.state.value) }}</span></td>
+      <td data-l="{{ _('Pg.') }}">{{ j.pages or '' }}</td>
+      <td data-l="{{ _('File') }}" class="wrap">
+        {{ r.title or '—' }}{% if r.title_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" data-open-td>…</button>{% endif %}
+        {% if r.doc %}<div class="muted">{{ r.doc }}{% if r.doc_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" data-open-td>…</button>{% endif %}</div>{% endif %}
+        {% if r.comment %}<div class="muted">💬 {{ r.comment }}{% if r.comment_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete comment') }}" data-open-td>…</button>{% endif %}</div>{% endif %}
+        {% if r.file_cut %}<dialog>
+          <h2>{{ _("File · no. %(id)s", id=j.id) }}</h2>
+          <dl class="kv">{% for label, value in r.details %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
+          <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
+        </dialog>{% endif %}</td>
+      <td data-l="{{ _('Notes') }}" class="muted wrap">{{ r.note }}{% if r.note_cut %} <button type="button" class="dots" title="{{ _('Show and copy the whole note') }}" aria-label="{{ _('Show and copy the whole note') }}" data-open-next>…</button>
+        <dialog>
+          <h2>{{ _("Note · no. %(id)s", id=j.id) }}</h2>
+          {{ copybox(j.denied_reason) }}
+          <form method="dialog" class="jb-close"><button class="sec">{{ _("Close") }}</button></form>
+        </dialog>{% endif %}</td>
+      {% if cancel %}<td>{% if j.state.value == 'accepted' and j.cups_job_id and j.printer and r.name %}
+        <form method="post" action="/admin/jobs/{{ j.id }}/cancel" data-confirm="{{ _t('Cancel this queued job?') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Cancel") }}</button></form>{% endif %}</td>{% endif %}
+    </tr>

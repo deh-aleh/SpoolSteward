@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Users") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/users.js?v={{ app_version }}" defer></script>{% endblock %}
+{% block body %}
+{% macro lim(m) %}{% if m.limit is none %}<span class="muted">{{ _("unlimited") }}</span>{% else %}<span {% if m.tip %}title="{{ m.tip }}"{% endif %}><span class="{{ 'inherited' if m.inherited }}">{{ m.limit }}</span>{% if m.extra %} <span class="extra">+{{ m.extra }}</span>{% endif %}</span>{% endif %}{% endmacro %}
+<div class="card">
+  <h1>{{ _("Users") }}</h1>
+  <p class="muted">{{ _('Read-only values: use <b>Edit</b> to change them. <span class="inherited">Italic</span> = inherited from the group · <span class="extra">+N</span> = active grants (temporary or permanent): hover over Jobs or Pages to see which and when they expire.') }}</p>
+  <table class="stack">
+    <tr><th>{{ _("User") }}</th><th>{{ _("Group") }}</th><th>{{ _("State") }}</th><th>{{ _("Admin") }}</th><th>{{ _("Jobs") }}</th><th>{{ _("Pages") }}</th><th>{{ _("Period") }}</th><th>{{ _("Usage") }}</th><th>{{ _("Keys") }}</th><th></th></tr>
+    {% for r in rows %}{% set u = r.u %}{% set v = r.view %}
+    <tr>
+      <td data-l="{{ _('User') }}"><b>{{ u.username }}</b>{% if u.must_change_password %}<div class="muted">{{ _("must change password") }}</div>{% endif %}{% if r.waiting %}<div class="muted">{{ _("waiting for approval") }}</div>{% endif %}{% if u.provider == 'local' and not u.password_hash %}<div class="muted">{{ _("password not set") }}</div>{% endif %}
+        <div class="muted">{{ _('local') if u.provider == 'local' else u.provider }}</div></td>
+      <td data-l="{{ _('Group') }}">{{ r.group }}</td>
+      <td data-l="{{ _('State') }}">{% if u.enabled %}<span class="pill s-ok">{{ _("active") }}</span>{% else %}<span class="pill s-revoked">{{ _("disabled") }}</span>{% endif %}</td>
+      <td data-l="{{ _('Admin') }}">{{ _('yes') if u.is_admin else '—' }}</td>
+      <td data-l="{{ _('Jobs') }}">{{ lim(v.jobs) }}</td>
+      <td data-l="{{ _('Pages') }}">{{ lim(v.pages) }}</td>
+      <td data-l="{{ _('Period') }}">{{ {'weekly': _('weekly'), 'monthly': _('monthly')}.get(v.period, v.period) }}</td>
+      <td data-l="{{ _('Usage') }}" class="muted">{% for l in v.usage %}<div>{{ l }}</div>{% else %}—{% endfor %}</td>
+      <td data-l="{{ _('Keys') }}"><a href="/admin/users/{{ u.id }}/keys">{{ ngettext("%(n)s active", "%(n)s active", r.key_count) }}</a></td>
+      <td><a class="btn sec" href="/admin/users/{{ u.id }}/edit">{{ _("Edit") }}</a></td>
+    </tr>
+    {% else %}<tr><td colspan="10" class="muted">{{ _("No users.") }}</td></tr>{% endfor %}
+  </table>
+</div>
+<div class="grid2">
+  <form class="card" method="post" action="/admin/users/local">
+    <h2>{{ _("New local user") }}</h2>
+    <p class="muted">{{ _("Account managed here, without RADIUS. If you leave the password empty a temporary one is generated (you will see it only once).") }}</p>
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="row">
+      <input type="text" name="username" placeholder="{{ _('user name') }}" class="ur-name" required>
+      <select name="group_id"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="row ur-row">
+      <div class="pwcell ur-pw">{% with name="password", placeholder=_t('temporary password (min. %(n)s)', n=password_min_length), autocomplete="new-password", optional=true %}{% include "_pwfield.html" %}{% endwith %}</div>
+      <label><input type="checkbox" name="is_admin" value="1"> {{ _("administrator") }}</label>
+      <button class="ico ur-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
+    </div>
+  </form>
+  <div class="card" id="registration">
+    <h2>{{ _("Registration") }}
+      {% if reg.is_open %}<span class="pill s-ok">{{ _("open") if reg.mode == 'open' else _("open, with approval") }}</span>
+      {% elif reg.closed == 'expired' %}<span class="pill s-ended">{{ _("closed: time is over") }}</span>
+      {% else %}<span class="pill">{{ _("closed") }}</span>{% endif %}</h2>
+    <p class="muted">{{ _("Lets people create their own local account at /register, in a group you marked as requestable. It applies to all administrators.") }}</p>
+    {% if not reg.groups %}<div class="us-warn" role="alert">{{ _("No group can be requested: mark at least one group as requestable (Groups page) before opening registration.") }}</div>{% endif %}
+    {% if reg.is_open %}
+    <p class="muted">{% if reg.until %}{{ _("until %(when)s", when=reg.until|localtime('%Y-%m-%d %H:%M')) }}{% else %}{{ _("until you switch it off") }}{% endif %}{% if reg.left is not none %} · {{ ngettext("%(n)s account still allowed", "%(n)s accounts still allowed", reg.left) }}{% endif %}</p>
+    {% endif %}
+    <form method="post" action="/admin/registration" class="row">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="mode" value="off">
+      <button class="switch{{ ' on' if reg.is_open }}" role="switch" id="reg-switch" aria-checked="{{ 'true' if reg.is_open else 'false' }}" {% if not reg.is_open and not reg.groups %}disabled{% endif %}
+              aria-label="{{ _('Registration') }}" title="{{ _('On: click to turn off') if reg.is_open else _('Off: click to turn on') }}"><i></i></button>
+      <span class="muted">{{ _("On") if reg.is_open else _("Off") }}</span>
+    </form>
+    <dialog id="reg-dlg">
+      <form method="post" action="/admin/registration">
+        <div class="dlghead"><h3>{{ _("Open registration") }}</h3></div>
+        <input type="hidden" name="csrf_token" value="{{ csrf }}">
+        <div class="dlgfield">{{ _("Mode") }}</div>
+        <div class="seg" role="group" aria-label="{{ _('Mode') }}">
+          <label><input type="radio" name="mode" value="open" {{ 'checked' if not radius_enabled }}><span>{{ _("open") }}</span></label>
+          <label><input type="radio" name="mode" value="approval" {{ 'checked' if radius_enabled }}><span>{{ _("with approval") }}</span></label>
+        </div>
+        <p class="muted">{{ _("Open: the account works at once. With approval: the account stays disabled until an administrator approves it in Requests; rejecting it deletes the account.") }}</p>
+        {% if radius_enabled %}<div class="us-warn" role="alert">{{ _("RADIUS is configured: someone could register the name of a colleague who has not logged in yet, and that colleague could no longer log in. With approval you check every name.") }}</div>{% endif %}
+        <div class="dlgfield">{{ _("Stays open") }}</div>
+        <select name="hours" aria-label="{{ _('Stays open') }}">
+          <option value="">{{ _("until I switch it off") }}</option><option value="1">{{ _("1 hour") }}</option><option value="4">{{ _("4 hours") }}</option>
+          <option value="24">{{ _("24 hours") }}</option><option value="168">{{ _("7 days") }}</option>
+        </select>
+        <div class="dlgfield">{{ _("Number of accounts") }}</div>
+        <input type="number" name="accounts" min="1" max="10000" placeholder="{{ _('no limit') }}" aria-label="{{ _('Number of accounts') }}">
+        <p class="muted">{{ _("If you set both, it closes at the first one reached. Groups offered: %(groups)s.", groups=reg.groups|map(attribute='name')|join(', ') or '—') }}</p>
+        <div class="row actions"><button type="button" class="sec" id="reg-cancel">{{ _("Cancel") }}</button><button>{{ _("Open registration") }}</button></div>
+      </form>
+    </dialog>
+  </div>
+  {% if radius_enabled %}
+  <form class="card" method="post" action="/admin/users">
+    <h2>{{ _("Pre-register a RADIUS user") }}</h2>
+    <p class="muted">{{ _("To assign group and limits before their first sign-in.") }}</p>
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="row">
+      <input type="text" name="username" placeholder="{{ _('RADIUS username') }}" required>
+      <select name="group_id"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
+      <button class="ico ur-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

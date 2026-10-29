@@ -1,0 +1,36 @@
+# the project directory is also a virtualenv: keep it out of every build context
+bin/
+lib/
+lib64
+include/
+pyvenv.cfg
+**/__pycache__/
+**/*.pyc
+.pytest_cache/
+.git/
+certs/
+config/
+data/
+docker/run/
+*.db
+*.db-wal
+*.db-shm
+tests/
+# local working files of whoever develops the project: never needed by the image
+build/
+*.egg-info/
+graphify-out/
+NOTE.md
+TEST.md
+*.odt
+# the image needs pyproject.toml, requirements/ (the lock files), spoolsteward/, docs/ and the start scripts of docker/stack/ (cups, ipp-usb)
+deploy/
+docker/*
+!docker/stack/
+docker/stack/updater/
+scripts/
+docker-compose*.yml
+README.md
+requirement.txt
+alembic.ini
+.env

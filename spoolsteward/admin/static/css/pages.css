@@ -1,0 +1,36 @@
+/* Small page-specific rules of the admin templates; each class is prefixed by its template. */
+.ar-path { font-size: 12px; }
+.ar-sha { font-size: 11px; }
+.mn-gap, .me-gap, .no-gap, .ac-gap, .av-gap, .ud-row { margin-top: 12px; }
+.gr-head { justify-content: space-between; }
+.gr-title { margin: 0; }
+.row > .ar-back { flex: none; margin-left: auto; }  /* the way back sits on the right of the title, also on phones */
+.ky-revoke { margin-top: 12px; }
+.ky-label { flex: 1 1 260px; min-width: 200px; }  /* the whole hint "For which device? (e.g. laptop)" fits */
+.ss-card { max-width: 720px; margin-left: auto; margin-right: auto; }
+.ss-item { margin: 6px 0; }
+.ss-copy.ss-copy { font-size: 13px; }
+.ud-card { max-width: 640px; }
+.ur-row { margin-top: 8px; }
+/* user name above and password + eye below share one column, so the next column starts at the same place */
+.ur-name, .ur-pw { flex: 0 1 280px; min-width: 200px; }
+@media (max-width: 700px) { .ur-name, .ur-pw { flex: 1 1 100%; } }
+.ur-btn { margin-left: 8px; }
+.pw-note { margin: 0 0 14px; }
+.ac-form, .av-form { margin-bottom: 12px; }
+.ac-detail, .av-detail { font-size: 12px; }
+.rg-title, .rq-title { text-align: center; }
+.rq-opt { display: block; margin: 6px 0; }
+.ue-grants { margin-top: 10px; }
+.rp-top { width: 90px; }
+form[action="/admin/report"] > button[hidden] { display: none; }  /* the invisible default button of the report form */
+.rp-date { width: 130px; min-width: 0; }
+.rp-set { padding: 8px 14px 4px; }
+.rp-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rp-presets button.on { border-color: var(--accent); color: var(--accent); }
+.rp-hint { margin: 2px 0 6px; font-size: 13px; }
+.rp-set { border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+.rp-excl { margin-right: 14px; white-space: nowrap; }
+.us-warn { margin: 10px 0; padding: 8px 12px; border: 1px solid var(--err); border-radius: 6px; color: var(--err); }
+.authbox select.reg-group { width: 100%; font-size: 17px; min-height: 54px; padding: 10px 14px; margin-bottom: 14px; }
+.authbox .reg-note { margin: 4px 0 16px; }

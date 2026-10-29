@@ -1,0 +1,6 @@
+{# A switch that makes the page reload by itself. Set before including: ar_key (which page), ar_seconds, ar_on (on at first).
+   The choice is remembered by the browser, per page; the page does not reload while a popup is open or something is being typed. #}
+<span class="ar" data-ar-key="{{ ar_key }}" data-ar-secs="{{ ar_seconds|int }}" data-ar-on="{{ '1' if ar_on else '0' }}">
+  <button type="button" class="switch" role="switch" id="ar-{{ ar_key }}" aria-checked="false" aria-label="{{ _('Automatic refresh') }}" title="{{ _('Reload this page by itself') }}"><i></i></button>
+  <span class="muted">{{ _("Automatic refresh every %(n)s seconds", n=ar_seconds) }}</span>
+</span>

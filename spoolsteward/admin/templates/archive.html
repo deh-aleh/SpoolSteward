@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Audit archive") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="row gr-head"><h1 class="gr-title">{{ _("Audit archive") }}</h1><a class="ar-back" href="/admin/jobs">← {{ _p("menu", "Audit") }}</a></div>
+  <p>{{ _("The audit is never deleted. When the active tables exceed <b>%(mb)s MB</b> the oldest rows (outside the quota windows in progress) are written to compressed files and removed from here: they no longer appear in the Audit and Actions pages, but they can still be consulted and downloaded from this page.", mb=max_mb) }}</p>
+  <p class="muted">{{ _("Folder in the container:") }} <span class="mono">{{ directory }}</span><br>
+    {{ _("Folder on the server:") }} <span class="mono">{{ host_directory or _('not set (by default ./data/audit-archive in the project folder)') }}</span></p>
+  <p class="muted">{{ _("Current size of the active tables:") }}
+    {% for t, size in sizes.items() %}<b>{{ t }}</b> {{ '%.2f'|format(size / 1048576) }} MB{% if not loop.last %} · {% endif %}{% endfor %}</p>
+</div>
+<div class="card">
+  <table class="stack">
+    <tr><th>{{ _("File") }}</th><th>{{ _("Content") }}</th><th>{{ _("Period") }}</th><th>{{ _("Rows") }}</th><th>{{ _("Size") }}</th><th>{{ _("State") }}</th><th></th></tr>
+    {% for r in rows %}{% set a = r.a %}
+    <tr>
+      <td><span class="mono">{{ r.name }}</span><div class="muted mono ar-path">{{ a.path }}{% if r.host %}<br>{{ r.host }}{% endif %}</div>
+        <div class="muted mono ar-sha">sha256 {{ a.sha256 }}</div></td>
+      <td>{{ _('prints') if a.source_table == 'job_log' else _('admin actions') }}</td>
+      <td class="nowrap">{{ a.first_ts|localtime('%Y-%m-%d') }} → {{ a.last_ts|localtime('%Y-%m-%d') }}</td>
+      <td>{{ a.rows }}</td><td>{{ '%.1f'|format(a.bytes / 1024) }} KB</td>
+      <td><span class="pill s-{{ 'ok' if r.status == 'present' else r.status }}">{{ _('present') if r.status == 'present' else _(r.status) }}</span></td>
+      <td class="row">
+        <a href="/admin/archive/{{ a.id }}/view"><button type="button">{{ _("Open") }}</button></a>
+        <a href="/admin/archive/{{ a.id }}/download"><button type="button" class="sec">{{ _("Download") }}</button></a>
+        <form method="post" action="/admin/archive/{{ a.id }}/verify"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Verify integrity") }}</button></form>
+      </td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="muted">{{ _("No archive yet: one is created automatically when the audit exceeds the threshold.") }}</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

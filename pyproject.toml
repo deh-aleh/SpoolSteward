@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spoolsteward"
+version = "0.0.0b1"
+description = "Authentication, quotas and audit for shared printers, in front of CUPS (IPP)"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{name = "Alessio Paccino"}]
+requires-python = ">=3.12"
+# The source of requirements/*.txt (exact versions with their SHA-256), which the image and CI install from.
+# After a change here, regenerate them: the command is at the top of each file.
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
+    "sqlalchemy>=2",
+    "alembic",
+    "pyrad",
+    "jinja2",
+    "python-multipart",
+    "pydantic-settings",
+    "itsdangerous",
+    "argon2-cffi",
+    "zeroconf",
+    "pypdf",
+    "reportlab",
+    "cryptography",
+    "babel",
+    "markdown-it-py",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
+
+[project.scripts]
+spoolsteward = "spoolsteward.__main__:main"
+spoolsteward-admin = "spoolsteward.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["spoolsteward*"]
+
+[tool.setuptools.package-data]
+spoolsteward = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["demo: builds sample pages for screenshots (writes tests/_out); run with -m demo"]
+addopts = "-m 'not demo'"

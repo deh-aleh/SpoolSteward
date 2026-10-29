@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Print") }}{% endblock %}
+{% block body %}
+{% from "macros.html" import seg, stepper %}
+<div class="formpage">
+<form class="card" method="post" action="/me/print" enctype="multipart/form-data" id="pf" data-keep>
+  <div class="pagehead">
+    <span class="pico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg></span>
+    <div><h1>{{ _("Print a file") }}</h1></div>
+  </div>
+  {% if outside_hours %}<p class="pill blocked pt-warn">{{ _("You can print %(window)s. Printing now is not possible.", window=outside_hours) }}</p>{% endif %}
+  {% if offline %}<p class="muted">{{ _("Not reachable right now: %(printers)s.", printers=offline|join(', ')) }}</p>{% endif %}
+  {% if forbidden_all %}
+    <p>{{ _("Your account is not allowed to use any of the printers. Your profile shows what you may print on.") }}</p>
+  {% elif not queues %}
+    <p>{{ _("No printer available at the moment. Try again shortly or tell an administrator.") }}</p>
+  {% else %}
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <h2 class="sh"><b>1</b> {{ _("Choose the file") }}</h2>
+  <label class="drop" id="drop">
+    <input type="file" name="file" id="file" accept=".pdf,.jpg,.jpeg,.png,.gif,.txt,application/pdf,image/*,text/plain" required>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"/></svg>
+    <span class="big">{{ _("Tap to choose a file") }}</span>
+    <div class="muted">{{ _("or drag it here · PDF, photo (JPEG, PNG, GIF) or text · at most %(mb)s MB", mb=max_mb) }}</div>
+    <div class="name" id="fname"></div>
+  </label>
+  <h2 class="sh"><b>2</b> {{ _("Choose the printer") }}</h2>
+  <div class="printers">
+    {% for q in queues %}
+    <label><input type="radio" name="queue" value="{{ q.name }}" {{ 'checked' if loop.first }} required>
+      {# the test printers store their description in CUPS in the language they were created in: say it in the reader's #}
+      {% set info = _("Test printer (%(name)s)", name=q.name) if q.virtual and q.name.startswith('debugprinter') else q.info %}
+      <span class="pi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg></span>
+      <span class="pt"><b>{{ info if info and info != q.name else q.name }}</b>{% if info and info != q.name %} <span class="muted">({{ q.name }})</span>{% endif %}
+        {% if q.color or q.duplex %}<small>{% if q.color %}<span class="pill">{{ _('colour') }}</span>{% endif %}{% if q.duplex %}<span class="pill">{{ _('double-sided') }}</span>{% endif %}</small>{% endif %}</span></label>
+    {% endfor %}
+  </div>
+  <h2 class="sh"><b>3</b> {{ _("Print options") }}</h2>
+  <div class="frows">
+    <div class="frow"><div class="permhead">{{ _("Comment") }}</div>
+      <div class="fctl"><input type="text" name="comment" maxlength="{{ comment_max }}" placeholder="{{ _('What it contains (optional, max %(n)s characters)', n=comment_max) }}" autocomplete="off">
+        <span class="hint">{{ _("It stays in the print log, under the file name.") }}</span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Paper size") }}</div><div class="fctl"><select name="media" id="media"></select></div></div>
+    <div class="frow"><div class="permhead">{{ _("Orientation") }}</div>
+      <div class="fctl">{{ seg("orientation", [("", _("Automatic")), ("portrait", _("Portrait")), ("landscape", _("Landscape"))], "") }}</div></div>
+    {% if perms.color %}<div class="frow" id="colorrow"><div class="permhead">{{ _("Colour") }}</div>
+      <div class="fctl">{{ seg("color", [("", _("Printer default")), ("color", _("In colour")), ("monochrome", _("Black and white"))], "") }}</div></div>{% endif %}
+    {% if perms.one_sided %}<div class="frow" id="sidesrow"><div class="permhead">{{ _("Sides") }}</div>
+      <div class="fctl">{{ seg("sides", [("", _("Printer default")), ("one-sided", _("One-sided")), ("two-sided-long-edge", _("Double-sided, long edge")), ("two-sided-short-edge", _("Double-sided, short edge"))], "", "compact") }}</div></div>{% endif %}
+    <div class="frow"><div class="permhead">{{ _("Pages") }}</div>
+      <div class="fctl"><input type="text" name="pages" id="pages" placeholder="{{ _('All — or 1,5 or 2-4') }}" inputmode="text" autocomplete="off"></div></div>
+    <div class="frow"><div class="permhead">{{ _("Copies") }}</div>
+      <div class="fctl"><div class="row">{{ stepper("copies", 1, min=1, max=max_copies, id="copies", label=_("Copies"), required=true) }}
+        <span class="hint">({{ _("at most %(n)s", n=max_copies) }})</span></div></div></div>
+  </div>
+  <div class="actions"><button id="go" class="ico pt-go" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg><span id="golabel">{{ _("Print") }}</span></button><a class="btn sec" href="/me">{{ _("Cancel") }}</a></div>
+  <p class="muted pt-mb0">{{ _("It counts as a normal print: same limits and same log. The pages are counted before printing.") }}</p>
+  {% endif %}
+</form>
+</div>
+{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/print.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script type="application/json" id="pt-data">{
+  "queues": {{ queues_js | tojson }},
+  "max_copies": {{ max_copies|tojson }},
+  "t_default": {{ _t('Printer default')|tojson }},
+  "t_default_mark": {{ _t('(default)')|tojson }},
+  "t_sending": {{ _t('Sending…')|tojson }}
+}</script>
+<script src="/admin/static/js/print.js?v={{ app_version }}" defer></script>{% endblock %}

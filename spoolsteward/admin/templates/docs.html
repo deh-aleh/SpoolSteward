@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Documentation") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/docs.css?v={{ app_version }}">{% endblock %}
+{% block body %}
+<div class="card">
+  {% if kind == "missing" %}
+  <h1>{{ _("Documentation") }}</h1>
+  <p>{{ _("The documentation is not installed on this server.") }}</p>
+  <p class="muted">{{ _("It is the docs folder of SpoolSteward: the standard image and the host install both include it. You can also read it on GitHub:") }}
+    <a href="https://github.com/deh-aleh/SpoolSteward/tree/main/docs" target="_blank" rel="noopener noreferrer">github.com/deh-aleh/SpoolSteward</a></p>
+  {% else %}
+  <div class="docbar">
+    {% if kind == "page" %}<a href="/docs/{{ doc_lang }}/">&larr; {{ _("Documentation index") }}</a>{% endif %}
+    <span class="sp"></span>
+    <span class="langsw" role="group" aria-label="{{ _('Language of the documentation') }}">
+      {% if doc_lang == "en" %}<span aria-current="true">EN</span><a href="{{ switch }}" hreflang="it" lang="it" title="Italiano">IT</a>
+      {% else %}<a href="{{ switch }}" hreflang="en" lang="en" title="English">EN</a><span aria-current="true">IT</span>{% endif %}
+    </span>
+  </div>
+  {% if kind == "index" %}
+  <div class="doc" lang="{{ doc_lang }}">
+    <h1>{{ _("Documentation") }}</h1>
+    <ul class="doctiles">
+      {% for name, title in entries %}<li><a href="/docs/{{ doc_lang }}/{{ name|urlencode }}"><span>{{ title }}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <div class="doc" lang="{{ doc_lang }}">{{ html|safe }}</div>
+  {% endif %}
+  {% include "_docs_faq.html" %}
+  {% endif %}
+</div>
+{% endblock %}

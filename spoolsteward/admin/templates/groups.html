@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Groups") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block body %}
+<div class="card">
+  <div class="row gr-head"><h1 class="gr-title">{{ _("Groups") }}</h1><a class="btn" href="/admin/groups/new">{{ _("New group") }}</a></div>
+  <p class="muted">{{ _("Read-only values: use <b>Edit</b> to change them. Empty limit = no limit. Jobs that were refused, failed or canceled before printing do not count. The page limit is soft: the job that exceeds it is printed anyway.") }}</p>
+  <table class="stack">
+    <tr><th>{{ _("Group") }}</th><th>{{ _("Members") }}</th><th>{{ _("Job limit") }}</th><th>{{ _("Page limit") }}</th><th>{{ _("Period") }}</th><th>{{ _("Requestable") }}</th><th></th></tr>
+    {% for r in rows %}{% set g = r.g %}
+    <tr>
+      <td data-l="{{ _('Group') }}"><b>{{ g.name }}</b>{% if g.name in system %}<div class="muted">{{ _("system group") }}</div>{% endif %}</td>
+      <td data-l="{{ _('Members') }}">{{ r.members }}</td>
+      <td data-l="{{ _('Job limit') }}">{{ r.jobs if r.jobs != '' else _('unlimited') }}</td>
+      <td data-l="{{ _('Page limit') }}">{{ r.pages if r.pages != '' else _('unlimited') }}</td>
+      <td data-l="{{ _('Period') }}">{{ {'weekly': _('weekly'), 'monthly': _('monthly')}.get(r.period, r.period) }}</td>
+      <td data-l="{{ _('Requestable') }}">{{ _('yes') if g.requestable else '—' }}</td>
+      <td><div class="row">
+        <a class="btn sec" href="/admin/groups/{{ g.id }}/edit">{{ _("Edit") }}</a>
+        <form method="post" action="/admin/groups/{{ g.id }}/delete" data-confirm="{{ r.warning }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger" {{ 'disabled' if g.name in system }}>{{ _("Delete") }}</button>
+        </form>
+      </div></td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="muted">{{ _("No groups.") }}</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

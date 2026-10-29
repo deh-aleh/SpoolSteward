@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "macros.html" import seg, stepper %}
+{% block title %}{{ _("Edit group") if g else _("New group") }}{% endblock %}
+{% block body %}
+<div class="formpage">
+<form class="card" method="post" action="{{ '/admin/groups/%d' % g.id if g else '/admin/groups' }}">
+  <div class="pagehead">
+    <span class="pico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 19.5c0-3.2 2.7-5.5 6-5.5s6 2.3 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17.5 14.2c2.3.2 3.8 1.9 3.8 4.3"/></svg></span>
+    <div><h1>{{ _("Edit group %(name)s", name=g.name) if g else _("New group") }}</h1></div>
+  </div>
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  {% if g and g.name in system %}<p class="muted">{{ _("System group: the name cannot be changed and the group cannot be deleted.") }}
+    {% if g.name == admin_group %}{{ _("Only administrators belong here.") }}{% endif %}</p>{% endif %}
+  <div class="frows">
+    <div class="frow"><div class="permhead">{{ _("Name") }}</div>
+      <div class="fctl"><input type="text" name="name" value="{{ g.name if g else '' }}" maxlength="64" required {{ 'readonly' if g and g.name in system }}></div></div>
+    <div class="frow"><div class="permhead">{{ _("Job limit") }}</div>
+      <div class="fctl">{{ stepper("jobs_limit", jobs, placeholder=_('unlimited'), label=_("Job limit")) }}</div></div>
+    <div class="frow"><div class="permhead">{{ _("Page limit") }}</div>
+      <div class="fctl">{{ stepper("pages_limit", pages, placeholder=_('unlimited'), label=_("Page limit")) }}</div></div>
+    <div class="frow"><div class="permhead">{{ _("Period") }}</div>
+      <div class="fctl">{{ seg("period", [("weekly", _("weekly")), ("monthly", _("monthly"))], period) }}</div></div>
+    <div class="frow"><div class="permhead">{{ _("Requestable") }}<small>{{ _("users can ask to be moved to this group") }}</small></div>
+      <div class="fctl">{{ seg("requestable", [("1", _("yes")), ("", _("no"))], "1" if g and g.requestable else "") }}</div></div>
+  </div>
+  {% include "_perm_fields.html" %}
+  <div class="actions"><button>{{ _("Save") if g else _("Create group") }}</button><a class="btn sec" href="/admin/groups">{{ _("Cancel") }}</a></div>
+</form>
+{% if g %}
+<form class="card" method="post" action="/admin/groups/{{ g.id }}/delete" data-confirm="{{ warning }}" data-confirm-title="{{ _('Delete group') }}" data-confirm-ok="{{ _('Delete %(name)s', name=g.name) }}" data-confirm-danger>
+  <h2>{{ _("Delete group") }}</h2>
+  <p class="muted">{{ warning }}</p>
+  <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger" {{ 'disabled' if g.name in system }}>{{ _("Delete %(name)s", name=g.name) }}</button>
+</form>
+{% endif %}
+</div>
+{% endblock %}

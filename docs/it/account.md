@@ -1,0 +1,75 @@
+# Account, gruppi e chiavi di stampa
+
+[Indice della documentazione](../README.md) · [English](../en/accounts.md) · Italiano
+
+## 1. Chi è chi
+
+Ogni persona è **una riga** nella tabella `user` con un *provider*: **local** (la password argon2id sta nel database del gateway e si gestisce dal portale) oppure **RADIUS** (facoltativo; la password la verifica il server d'ufficio, il gateway non la conserva).
+
+**I nomi utente sono unici fra tutte le origini.** A CUPS e all'audit arriva solo `gw:<nome>`: due persone con lo stesso nome condividerebbero identità e quota. Il metodo di accesso lo decide la *riga*: un account locale non può essere aperto dal RADIUS nemmeno se il RADIUS conosce lo stesso nome. Un utente RADIUS sconosciuto viene creato
+al primo accesso al portale (nel gruppo predefinito) se `SPOOLSTEWARD_AUTO_CREATE_USERS=true`; se il nome è già locale, no. I nomi RADIUS si confrontano senza distinguere maiuscole (`Mario` e `mario` sono la stessa persona). Con `SPOOLSTEWARD_RADIUS_HOST` e `SPOOLSTEWARD_RADIUS_SECRET` entrambi `none` esistono solo account
+locali; se il RADIUS non risponde, l'accesso è negato.
+
+## 2. Il primo amministratore
+
+`administrator` esiste senza password. Al primo avvio il gateway scrive nei log un **codice monouso** (`docker compose logs gateway | grep "FIRST RUN"`); `/setup` lo chiede insieme alla nuova password e poi si disattiva. In alternativa: `spoolsteward-admin set-admin-password`. Di proposito non esiste una pagina aperta a tutti per
+diventare amministratore.
+
+L'account di emergenza non si può disattivare, declassare, eliminare né cambiargli origine, e il suo nome non si può dare a un altro account. È l'unico account senza gruppo: nessuna quota, nessuna regola di permessi, e non può chiedere di cambiare gruppo. Gli altri amministratori stanno nel gruppo "administrator", di cui puoi modificare limiti e
+permessi (il gruppo non si elimina). Nessuno può disattivare, declassare o eliminare se stesso, né l'ultimo amministratore.
+
+## 3. Password (account locali)
+
+Minimo 12 caratteri (`SPOOLSTEWARD_PASSWORD_MIN_LENGTH`), diversa dal nome utente. Una password creata o reimpostata da un amministratore è **temporanea**: si mostra una volta e va cambiata al primo accesso. Cambiare password chiude le altre sessioni dell'utente. Il login spende sempre il costo di un hash, anche per nomi inesistenti, e non rivela se il nome esiste.
+
+## 4. Gruppi
+
+I limiti di quota si impostano per **gruppo**, con override facoltativi per utente ([quote.md](quote.md)). Esistono sempre due gruppi di sistema, che non si eliminano:
+
+- `default` — dove partono tutti e dove vanno gli utenti quando il loro gruppo viene eliminato o smettono di essere amministratori;
+- `administrator` — solo per gli amministratori: la promozione sposta l'utente lì, il declassamento lo riporta in `default`. Un non amministratore non può esservi spostato a mano.
+
+Un gruppo si può marcare **richiedibile**: gli utenti possono allora chiedere di entrarvi. I gruppi amministrativi non lo sono mai.
+
+## 5. Chiavi di stampa
+
+I sistemi operativi tengono le password di stampa in chiaro (per esempio `printers.conf` su Linux), perciò i client **non usano mai** la password di dominio: usano una **chiave di stampa personale**.
+
+- La crea l'utente in *Profilo → Crea una chiave* (un'etichetta per dispositivo). Si mostra **una volta**; si conserva solo come hash sha256 di 192 bit casuali. Vale **solo per stampare e scansionare**; non apre mai il portale.
+- **La durata la sceglie l'utente**: 1, 3 o 6 mesi, **1 anno (proposto)**, 1 anno e 6 mesi, 2 anni, oppure **una sola stampa**. Il massimo è `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` (90 giorni) per gli utenti RADIUS e `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` (730) per i locali; la tendina mostra solo ciò che ci sta. Un utente RADIUS deve rifare il login per averne un'altra,
+  così chi lascia l'azienda smette di stampare alla scadenza.
+- **Chiave monouso**: vale per una sola stampa. Se nessuno la usa smette dopo `SPOOLSTEWARD_KEY_ONCE_HOURS` ore (24). Appena la stampa è accettata la chiave esce dall'elenco; per `SPOOLSTEWARD_KEY_ONCE_GRACE_SECONDS` secondi (120) può ancora chiedere lo stato del lavoro, non stamparne un altro. Una stampa respinta dalla quota non la consuma; una accettata ma poi non riuscita sì.
+- Una chiave è personale: chi la possiede stampa e scansiona come quell'utente, sulla sua quota e nel suo audit. Se è stata ceduta, o il dispositivo è perso, va revocata. L'ultimo uso (ora e IP) è annotato al massimo una volta al minuto.
+- Si revoca una chiave, o tutte, in *Le mie chiavi* (`/me/keys`) oppure, per un amministratore, in `/admin/users/<id>/keys`. L'amministratore può anche **disattivarla** (la scadenza continua a scorrere; si può riattivare), **prolungarla** (nuova scadenza = adesso + la durata scelta, entro il massimo dell'account; il tempo rimasto **non** si somma) o **revocarla**.
+  Ogni azione finisce nell'audit (`key.disable`, `key.enable`, `key.extend`, `key.revoke`) e **l'utente la trova nelle sue notifiche** (`/me/notices`), senza il nome dell'amministratore; nessuna notifica se l'amministratore agisce su una chiave propria.
+- L'utente trova negli avvisi anche quando un amministratore **cambia il suo gruppo** (pure quando un gruppo viene eliminato e i suoi membri passano a `default`), **lo rende amministratore o gli toglie il diritto**, **gli dà o gli ritira quota extra**, oppure quando una **richiesta è approvata o rifiutata** (con la nota). Nessun avviso per le modifiche che fai a te stesso, e cambiare i
+  limiti di un gruppo o usare `set-group` non ne manda.
+- Le chiavi **revocate** e **scadute** spariscono dopo `SPOOLSTEWARD_KEY_HISTORY_DAYS` giorni (14; 0 = mai); l'elenco dice quando. Facoltativo, spento di default: `SPOOLSTEWARD_KEY_EXPIRY_WARN_ENABLED=true` avvisa nella campanella `SPOOLSTEWARD_KEY_EXPIRY_WARN_DAYS` giorni (7) prima della scadenza, una volta per chiave.
+
+`SPOOLSTEWARD_IPP_AUTH=keys` (predefinito) accetta per stampare solo le chiavi. `keys+radius` accetta anche la password RADIUS per gli utenti RADIUS durante una transizione (mai per gli account locali): incoraggia a salvare la password di dominio sui client, quindi usala solo temporaneamente. Tutto ciò che inizia con `cpk-` è preso per una chiave di stampa:
+se non è valida (scaduta, revocata, disattivata) viene rifiutato subito e **non viene mai inviato a RADIUS**, così una vecchia chiave rimasta su un telefono non aggiunge accessi falliti all'account di dominio. Unica conseguenza: una password di dominio che inizia con `cpk-` non si può usare per stampare.
+
+## 6. Protezione dei login
+
+- 5 password *diverse* sbagliate in 5 minuti per la stessa coppia (utente, IP) bloccano quella coppia per 5 minuti; c'è anche un tetto per IP. La stessa password sbagliata ripetuta da un client conta una volta (libcups riprova 3–5 volte) e un estraneo non può bloccare un altro utente. Il blocco è salvato in `/data/login-lockout.json` (solo nomi utente, indirizzi e orari),
+  quindi un riavvio non lo azzera; **non** disattiva l'account e lo stesso utente da un altro indirizzo non è toccato. Durante il blocco la pagina di accesso risponde "Troppi tentativi falliti, riprova più tardi" anche se poi la password è giusta.
+- Disabilitare un utente nel portale blocca subito login e chiavi.
+- Sessioni del portale: firmate, 8 ore, token CSRF su ogni POST, cookie `Secure` + `SameSite=strict`; le pagine che mostrano un segreto sono inviate con `Cache-Control: no-store`.
+
+## 7. Eliminare un utente
+
+Rimuove account, chiavi, richieste, concessioni (di quota e di permesso), limiti e permessi personali, ma **non lo storico**: le righe di audit conservano il nome utente e perdono solo il legame con l'id. L'amministratore scrive il nome dell'utente per confermare.
+
+## 8. L'origine di un account
+
+La pagina di modifica dell'utente mostra, come semplice testo, da dove l'account fa l'accesso (locale o RADIUS); dal portale non si può cambiare. Per spostare una persona da un'origine all'altra si elimina l'account e lo si ricrea dall'altra parte (lo storico delle stampe conserva il nome utente).
+
+## 9. Auto-registrazione
+
+Un amministratore può far creare alle persone il proprio account **locale**: si attiva **Registrazione** in *Utenti* (la finestra chiede modalità, per quanto resta aperta e quanti account ammette; al primo limite raggiunto si chiude). È un interruttore unico per tutti gli amministratori, spento di default, e ogni cambio finisce nel registro degli amministratori. La pagina di accesso mostra allora il link a `/register`.
+
+- La persona sceglie nome, password (due volte) e un gruppo tra quelli **richiedibili**. Mai un amministratore, mai un altro gruppo. Senza gruppi richiedibili la registrazione non si apre (e si chiude da sola se l'ultimo smette di esserlo).
+- **Aperta**: l'account funziona subito e la persona entra. **Con approvazione**: l'account nasce disabilitato e compare in *Richieste*; **Approva** lo abilita, **Rifiuta** lo elimina. Se nessuno decide entro `SPOOLSTEWARD_REQUEST_TTL_DAYS` viene eliminato. Quelli in attesa restano gestibili anche a registrazione spenta.
+- Un indirizzo può usare la pagina `SPOOLSTEWARD_REGISTER_PER_IP_HOUR` volte l'ora, tra riusciti ed errori. Il limite sta in memoria: un riavvio lo azzera.
+- **Con RADIUS configurato conviene "con approvazione".** Il gateway non può chiedere a RADIUS se un nome esiste, quindi qualcuno potrebbe registrare il nome di un collega prima del suo primo accesso, e il collega verrebbe rifiutato. Rifiuta il nome o elimina l'account locale: la persona vera entra al login successivo.
+- La pagina dice quando un nome è occupato, quindi rivela quali nomi esistono.

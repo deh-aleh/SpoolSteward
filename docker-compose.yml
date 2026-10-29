@@ -1,0 +1,173 @@
+# Production-style stack: ipp-usb + CUPS + gateway (the application), everything in containers.
+# You never edit this file: every setting is in .env (see docker/env.example), so an update can replace this file freely.
+# Nothing is installed on the host and no host CUPS is touched. Setup: scripts/docker-init.sh
+#
+# Two images only: "spoolsteward" (the application, CUPS and ipp-usb; the services below start it with different commands)
+# and "spoolsteward-updater" (optional, see the service "updater").
+#
+# Two ways to get the images (same file):
+#   * build from this source tree:   docker compose up -d --build
+#   * download them, no source:      SPOOLSTEWARD_REGISTRY=ghcr.io/<owner> SPOOLSTEWARD_VERSION=1.0.0 docker compose pull
+#                                    docker compose up -d
+#     (put both variables in .env so they are not typed every time)
+# SPOOLSTEWARD_VERSION: use a fixed version in production, never "latest", so an update is a decision and not a surprise.
+# Try it without a printer or a RADIUS server:
+#   CUPS_VIRTUAL_QUEUE=1 docker compose --profile radius-test up -d --build
+name: spoolsteward
+
+# the one image of the stack; every service that uses it also carries the same build recipe, so that
+# `docker compose up -d --build` finds it whichever service comes first
+x-image: &image ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward:${SPOOLSTEWARD_VERSION:-dev}
+x-build: &build
+  context: .
+  dockerfile: docker/stack/Dockerfile
+# Docker keeps everything a container prints, for ever, unless told otherwise: on a small server (a Raspberry Pi with an SD card)
+# the logs would fill the disk in the end. Every service keeps at most 3 files of 10 MB (the newest 30 MB of log).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  # USB <-> IPP bridge. Needs exclusive use of the printer: stop the host's ipp-usb first
+  # (sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb).
+  ipp-usb:
+    logging: *logging
+    image: *image
+    build: *build
+    command: ["/usr/local/lib/spoolsteward/ipp-usb.sh"]
+    user: "0:0"                             # needs root to open the USB devices
+    restart: unless-stopped
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+      - ipp-usb-state:/var/ipp-usb          # remembers the port given to each printer
+    device_cgroup_rules:
+      - "c 189:* rmw"                       # USB char devices, also the ones plugged in later
+    # no published ports: the printer is reachable only from this compose network
+
+  # Private backend: unix socket only, shared with the gateway through a volume.
+  cups:
+    logging: *logging
+    image: *image
+    build: *build
+    command: ["/usr/local/lib/spoolsteward/cups.sh"]
+    user: "0:0"                             # cupsd runs as root and drops privileges for the filters itself
+    restart: unless-stopped
+    environment:
+      CUPS_QUEUES: ${CUPS_QUEUES:-}
+      CUPS_VIRTUAL_QUEUE: ${CUPS_VIRTUAL_QUEUE:-0}
+    device_cgroup_rules:
+      - "c 189:* rmw"                       # USB char devices, also the ones plugged in later
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb           # printers that ipp-usb can not serve (no IPP-over-USB): CUPS' own usb backend
+      - cups-config:/etc/cups               # queues survive restarts
+      - ./docker/stack/cups/cupsd.conf:/etc/cups/cupsd.conf:ro
+      - cups-run:/run/cups
+      - cups-spool:/var/spool/cups          # job history (the gateway's reconciler reads it)
+      - cups-pdf:/var/spool/cups-pdf        # output of the optional "virtual" queue
+    healthcheck:
+      test: ["CMD-SHELL", "lpstat -r"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # The application: IPP and eSCL proxy, web portal, schedulers.
+  gateway:
+    logging: *logging
+    image: *image
+    build: *build
+    # runs as the host user (decided here, not when the image is built, so one published image fits every machine):
+    # the bind-mounted TLS key (mode 600) and data/audit-archive belong to that user
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    depends_on:
+      cups:
+        condition: service_healthy
+    env_file: .env
+    ports:
+      - "${PORTAL_PORT:-8631}:8631"         # the only thing exposed to the network
+    environment:
+      # shown in the portal so people know where the compressed audit files are on this machine
+      SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH: ${AUDIT_ARCHIVE_HOST_PATH:-none}
+      SPOOLSTEWARD_BACKUP_HOST_PATH: ${BACKUP_HOST_PATH:-none}
+    volumes:
+      - ./config/tls:/tls:ro
+      - cups-run:/run/cups
+      - portal-data:/data                   # SQLite: users, rules, audit
+      - ./data/audit-archive:/data/audit-archive   # compressed audit, kept forever, readable on the host
+      # backups: the only place the gateway may write them. Administrators pick a sub-folder in the portal.
+      # To save on a USB disk or a network share, mount it on the host INSIDE this folder (before starting the gateway).
+      - ${BACKUP_DIR:-./data/backups}:/backups
+      # read-only: lets encrypted backups include .env and the TLS key (never written into a plain backup)
+      - ./config:/config:ro
+      - ./.env:/project.env:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import ssl,urllib.request as u; c=ssl.create_default_context(); c.check_hostname=False; c.verify_mode=ssl.CERT_NONE; u.urlopen('https://127.0.0.1:8631/healthz', context=c, timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  # Announces the queues on the LAN (DNS-SD/Bonjour: _ipps._tcp + AirPrint subtype) so phones and computers find them.
+  # Multicast does not cross a bridge network, hence host networking; it only reads the queue list from CUPS.
+  mdns:
+    logging: *logging
+    image: *image
+    build: *build
+    command: ["python", "-m", "spoolsteward.mdns"]
+    restart: unless-stopped
+    depends_on: [gateway]
+    network_mode: host
+    env_file: .env
+    environment:
+      SPOOLSTEWARD_MDNS_PORT: ${PORTAL_PORT:-8631}
+    volumes:
+      - cups-run:/run/cups
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+
+  # OPTIONAL: lets administrators press "Update" in the portal. Off by default, because it needs the Docker socket,
+  # and whoever controls that socket controls the whole machine (root). Start it with:  docker compose --profile autoupdate up -d
+  # Details and alternatives (scripts/update.sh in a terminal): docs/en/installation.md, section "Updates".
+  # PROJECT_DIR is written into .env by scripts/docker-init.sh (the full path of this folder).
+  updater:
+    logging: *logging
+    image: ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward-updater:${SPOOLSTEWARD_VERSION:-dev}
+    build: ./docker/stack/updater
+    profiles: [autoupdate]
+    restart: unless-stopped
+    working_dir: ${PROJECT_DIR:-/nonexistent}
+    environment:
+      PROJECT_DIR: ${PROJECT_DIR:-}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PROJECT_DIR:-/nonexistent}:${PROJECT_DIR:-/nonexistent}   # same path as on the host, so relative paths in this file still work
+      - portal-data:/data                   # where requests and results are exchanged with the portal (folder /data/update)
+    security_opt: ["no-new-privileges:true"]
+
+  # Only for trying the stack: users mario/mario123, anna/anna123, admin/admin123, secret testing123.
+  # Point .env at it with SPOOLSTEWARD_RADIUS_HOST=radius, SPOOLSTEWARD_RADIUS_SECRET=testing123.
+  # (RADIUS is optional: with host/secret empty only local accounts exist.)
+  radius:
+    logging: *logging
+    image: freeradius/freeradius-server:3.2.10
+    profiles: [radius-test]
+    restart: unless-stopped
+    volumes:
+      - ./docker/radius/clients.conf:/etc/freeradius/clients.conf:ro
+      - ./docker/radius/authorize:/etc/freeradius/mods-config/files/authorize:ro
+
+volumes:
+  ipp-usb-state:
+  cups-config:
+  cups-run:
+  cups-spool:
+  cups-pdf:
+  portal-data:

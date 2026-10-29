@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "macros.html" import seg, stepper %}
+{% block title %}{{ _("Edit %(user)s", user=u.username) }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block body %}
+<div class="formpage">
+<form class="card" method="post" action="/admin/users/{{ u.id }}">
+  <div class="pagehead">
+    <span class="pico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span>
+    <div><h1>{{ _("Edit %(user)s", user=u.username) }}</h1></div>
+  </div>
+  {% if protected %}<p class="muted">{{ _("%(user)s is the emergency administrator: it has no group and no limits, and it cannot be disabled, demoted, deleted or moved to RADIUS.", user=u.username) }}</p>{% endif %}
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <div class="frows">
+    <div class="frow"><div class="permhead">{{ _("Origin (sign-in)") }}</div>
+      <div class="fctl"><b>{{ _('local (password in the gateway)') if u.provider == 'local' else _('%(provider)s (password on the server)', provider=u.provider) }}</b>
+        <span class="hint">{{ _("Shown for information: the way this account signs in is set when it is created.") }}</span></div></div>
+    {% if not protected %}
+    <div class="frow"><div class="permhead">{{ _("Group") }}</div>
+      <div class="fctl"><select name="group_id">
+        <option value="0">—</option>
+        {% for g in groups %}<option value="{{ g.id }}" {{ 'selected' if u.group_id == g.id }}>{{ g.name }}</option>{% endfor %}
+      </select><span class="hint">{{ _("“%(group)s” is reserved for administrators: it changes by itself with the flag below.", group=admin_group) }}</span></div></div>
+    {% endif %}
+    <div class="frow"><div class="permhead">{{ _("State") }}</div>
+      <div class="fctl">{{ seg("enabled", [("1", _("active")), ("", _("disabled"))], "1" if u.enabled else "") }}</div></div>
+    <div class="frow"><div class="permhead">{{ _("Administrator") }}<small>{{ _("can use the administration panel") }}</small></div>
+      <div class="fctl">{{ seg("is_admin", [("1", _("yes")), ("", _("no"))], "1" if u.is_admin else "") }}</div></div>
+    {% if not protected %}
+    <div class="frow"><div class="permhead">{{ _("Job limit") }}</div>
+      <div class="fctl">{{ stepper("jobs_limit", jobs, placeholder=_('inherit'), label=_("Job limit")) }}
+        <span class="hint">{{ _("empty = inherit from the group") }}{% if view.jobs.extra %} · {{ _('<span class="extra">+%(n)s</span> granted', n=view.jobs.extra) }}{% endif %}</span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Page limit") }}</div>
+      <div class="fctl">{{ stepper("pages_limit", pages, placeholder=_('inherit'), label=_("Page limit")) }}
+        <span class="hint">{{ _("empty = inherit from the group") }}{% if view.pages.extra %} · {{ _('<span class="extra">+%(n)s</span> granted', n=view.pages.extra) }}{% endif %}</span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Period") }}</div>
+      <div class="fctl">{{ seg("period", [("weekly", _("weekly")), ("monthly", _("monthly"))], view.period) }}</div></div>
+    <div class="frow"><div class="permhead">{{ _("Usage") }}</div>
+      <div class="fctl muted">{% for l in view.usage %}<div>{{ l }}</div>{% else %}{{ _("no limit") }}{% endfor %}</div></div>
+    {% endif %}
+  </div>
+  {% include "_perm_fields.html" %}
+  {% if perm_grants %}
+  <p class="muted ue-grants">{{ _("Permissions granted after a request or directly:") }}
+    {% for g in perm_grants %}<b>+ {{ g.what }}</b> ({{ _("until %(date)s", date=g.until) if g.until else _("permanent") }}){% if not loop.last %}, {% endif %}{% endfor %}
+    · <a href="/admin/requests#grants">{{ _("manage") }}</a></p>
+  {% endif %}
+  <div class="actions"><button>{{ _("Save") }}</button><a class="btn sec" href="/admin/users">{{ _("Cancel") }}</a></div>
+</form>
+<div class="card">
+  <h2>{{ _("Other actions") }}</h2>
+  <div class="row">
+    <a class="btn sec" href="/admin/users/{{ u.id }}/keys">{{ _("Print keys") }}</a>
+    {% if u.provider == 'local' %}
+    <form method="post" action="/admin/users/{{ u.id }}/password" data-confirm="{{ _t('Generate a new temporary password for %(user)s?', user=u.username) }}" data-confirm-title="{{ _t('Reset password') }}" data-confirm-ok="{{ _t('Reset password') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec" type="submit">{{ _("Reset password") }}</button></form>
+    {% endif %}
+    {% if not protected and not is_self %}<a class="btn danger" href="/admin/users/{{ u.id }}/delete">{{ _("Delete account…") }}</a>{% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}
