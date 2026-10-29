@@ -38,3 +38,8 @@ tests/_out/
 /.update-prev/
 *.pm-tmp
 /.venv/
+
+# graphify (knowledge graph): local tooling only
+/graphify-out/
+/.graphifyignore
+/.claude/

@@ -179,9 +179,9 @@ async def test_the_key_page_gives_a_ready_command_per_printer_and_never_logs_the
     cmds = re.findall(r'class="secret ss-copy"[^>]*>([^<]+)<', r.text)
     cmds, urls = cmds[:2], cmds[2:]                                                  # terminal commands first (GNOME can not use the address), graphical addresses after
     assert "GNOME" in r.text and "add-printer-linux.sh" in r.text
-    assert all(u.startswith("ipps://ann:") for u in urls) and urls[0] == f"ipps://ann:{key}@gw.test/printers/HP7305"
+    assert all(u.startswith("ipps://ann:") for u in urls) and urls[0] == f"ipps://ann:{key}@gw.test:443/printers/HP7305"
     assert len(cmds) == 2 and all(c.startswith("lpadmin -p ") for c in cmds)
-    assert f'ipps://ann:{key}@gw.test/printers/HP7305' in cmds[0] and "auth-info-required=none" in cmds[0]
+    assert f'ipps://ann:{key}@gw.test:443/printers/HP7305' in cmds[0] and "auth-info-required=none" in cmds[0]
     assert key not in (await web.get("/me")).text                                    # shown once, never again
 
 
@@ -189,7 +189,7 @@ async def test_the_profile_explains_how_to_connect_each_kind_of_device(web):
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "HP7305", "info": "", "model": ""}])
     page = (await web.get("/me")).text
     assert "Phone or tablet" in page and "/me/print" in page and "Linux" in page and "Windows" in page and "macOS" in page and "/docs/windows" in page
-    assert "ipps://gw.test/printers/" in page and "HP7305" in page
+    assert "ipps://gw.test:443/printers/" in page and "HP7305" in page
 
 
 def two_pages() -> bytes:

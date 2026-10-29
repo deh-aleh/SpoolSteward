@@ -5,6 +5,7 @@ import base64
 import re
 import time
 from datetime import UTC, datetime, timedelta
+from spoolsteward.timeutil import local_tz
 
 import httpx
 import pytest
@@ -169,7 +170,7 @@ async def test_user_tooltip_shows_when_a_temporary_grant_expires(admin):
     tips = re.findall(r'title="([^"]+)"', row)
     assert any("+3 · temporary, expires on" in t and "+2 · permanent" in t for t in tips)       # jobs
     assert any("+10 · temporary, expires on" in t for t in tips)                                 # pages
-    assert until.astimezone().strftime("%Y-%m-%d")[:7] in " ".join(tips)
+    assert until.astimezone(local_tz()).strftime("%Y-%m-%d")[:7] in " ".join(tips)
 
 
 # ---------------------------------------------------------------- printer block / maintenance (web path, real CUPS)

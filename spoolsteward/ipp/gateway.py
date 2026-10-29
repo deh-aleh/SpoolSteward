@@ -17,7 +17,7 @@ from spoolsteward.auth.throttle import IP_FAILS, USER_FAILS, register_failure
 from spoolsteward.config import settings
 from spoolsteward.cups_client import UNKNOWN_CAPS, queue_caps
 from spoolsteward.ipp import codec
-from spoolsteward.netutil import client_ip
+from spoolsteward.netutil import client_ip, public_host
 from spoolsteward.ipp.rewrite import advertise_auth, rewrite_uris
 from spoolsteward.policy import audit, control, permissions
 from spoolsteward.db.models import Metric, PrintKey, Resource, User
@@ -104,7 +104,7 @@ def _scheme(request: Request) -> str:
 def _public_bases(request: Request) -> tuple[str, str]:
     host = request.headers.get("host", "localhost")
     ipp = _scheme(request)
-    return f"{ipp}://{host}", f"{'https' if ipp == 'ipps' else 'http'}://{host}"
+    return f"{ipp}://{public_host(request, ipp)}", f"{'https' if ipp == 'ipps' else 'http'}://{host}"
 
 
 def _unauthorized(detail: str = "authentication required") -> Response:

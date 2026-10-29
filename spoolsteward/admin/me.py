@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from spoolsteward.timeutil import local_tz, now_utc
+from spoolsteward.netutil import public_host
 from spoolsteward.admin.common import (
     back, client_ip, current_user, flash, get_db, render, session_stamp, verify_csrf,
 )
@@ -71,7 +72,7 @@ async def me(request: Request, user: User = Depends(current_user), db: Session =
         options=grants.quota_options(db, user, now, local_tz()),
         active_keys=sum(1 for k in key_rows if keylib.key_is_usable(k, now)),
         requests=[{"r": r, "what": _describe(db, r)} for r in reqs],
-        server=request.headers.get("host", ""), ipp_mode=settings.ipp_auth,
+        server=public_host(request), ipp_mode=settings.ipp_auth,
         queues=queues,
         can_request_group=not is_emergency(user) and bool(db.scalars(select(Group).where(Group.requestable, Group.id != (user.group_id or 0))).first()),
     )
@@ -93,7 +94,7 @@ async def key_create(request: Request, label: str = Form(""), validity: str = Fo
         db.commit()
     log.info("print key created user=%s label=%r", user.username, row.label)
     expires = (row.expires_at.astimezone(local_tz()).strftime("%Y-%m-%d %H:%M") if row.single_use else row.expires_at.strftime("%Y-%m-%d")) if row.expires_at else _("never")
-    host = request.headers.get("host", "")
+    host = public_host(request)
     commands = [
         {"queue": q["name"],
          "url": f'ipps://{quote(user.username, safe="")}:{plain}@{host}/printers/{q["name"]}',
@@ -119,7 +120,7 @@ def keys_page(request: Request, user: User = Depends(current_user), db: Session 
     rows = db.scalars(select(PrintKey).where(PrintKey.user_id == user.id).order_by(PrintKey.id.desc())).all()
     return render(request, "keys.html", user, owner=user, keys=keylib.listing(rows, now),
                   choices=keylib.duration_choices(user), default_choice=str(keylib.default_duration(user)),
-                  base="/me/keys", own=True, server=request.headers.get("host", ""), ipp_mode=settings.ipp_auth)
+                  base="/me/keys", own=True, server=public_host(request), ipp_mode=settings.ipp_auth)
 
 
 @router.post("/keys/revoke-all", dependencies=[Depends(verify_csrf)])
