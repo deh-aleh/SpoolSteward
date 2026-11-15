@@ -59,7 +59,7 @@ def test_docker_init_makes_a_private_env_with_a_secret_and_never_overwrites_it(t
     r = run()
     assert r.returncode == 0, r.stderr
     env = (tmp_path / ".env").read_text()
-    assert "__" not in env
+    assert not re.search(r"__[A-Z]+__", env)               # no placeholder left ("__" alone can be in the random key: "/" becomes "_")
     assert f"PUID={os.getuid()}" in env and f"PGID={os.getgid()}" in env and "SPOOLSTEWARD_VERSION=1.2.3" in env
     assert f"PROJECT_DIR={tmp_path}" in env
     key = re.search(r"^SPOOLSTEWARD_SECRET_KEY=(.+)$", env, re.M).group(1)
