@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Register") }}{% endblock %}
-{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block mainattr %} class="authmain"{% endblock %}
 {% block body %}
-<div class="card authbox">
+<div class="authbox sheet">
   {% include "_authbrand.html" %}
   {% if closed %}
   <h1>{{ _("Registration is closed") }}</h1>
@@ -11,14 +10,16 @@
   {% else %}
   <h1>{{ _("Register a local account") }}</h1>
   <form method="post" action="/register">
-    <input type="text" name="username" placeholder="{{ _('User') }}" aria-label="{{ _t('User') }}" autocomplete="username" autofocus required>
-    {% with name="password", placeholder=_t('Password (min. %(n)s characters)', n=password_min_length), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
-    {% with name="confirm", placeholder=_t('Repeat the password'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
-    <select name="group_id" class="reg-group" aria-label="{{ _t('Group') }}" required>
-      <option value="" disabled selected>{{ _("Group") }}</option>
+    <label class="f" for="reg-user">{{ _("User") }}</label>
+    <input type="text" id="reg-user" name="username" autocomplete="username" autofocus required>
+    {% with name="password", label=_t('Password (min. %(n)s characters)', n=password_min_length), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
+    {% with name="confirm", label=_t('Repeat the password'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
+    <label class="f" for="reg-group">{{ _("Group") }}</label>
+    <select name="group_id" id="reg-group" required>
+      <option value="" disabled selected></option>
       {% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}
     </select>
-    {% if approval %}<p class="muted reg-note">{{ _("An administrator must approve the account before you can log in.") }}</p>{% endif %}
+    {% if approval %}<p class="note">{{ _("You can log in after an administrator approves the account.") }}</p>{% endif %}
     <button class="primary">{{ _("Register") }}</button>
   </form>
   <p class="muted"><a href="/login">{{ _("Back to login") }}</a></p>

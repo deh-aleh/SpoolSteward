@@ -177,6 +177,7 @@ def _limit_view(db: Session, u: User, now) -> dict:
         out[m.value] = {
             "limit": r.limit if r else None, "inherited": inherited,
             "extra": sum(g.amount for g in grants), "period": r.period.value if r else None, "tip": "\n".join(tip),
+            "used": usage(db, u, r, now, local_tz()) if r else 0,
         }
     out["period"] = next((r.period.value for r in rules.values()), "weekly")
     return out
@@ -209,6 +210,21 @@ def _is_admin_group(db: Session, group_id: int) -> bool:
 def _providers(request: Request) -> list[str]:
     auth = getattr(request.app.state, "auth", None)
     return ["local"] + ([auth.name] if auth is not None else [])
+
+
+@router.get("/users/new", response_class=HTMLResponse)
+def user_new(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    groups = db.scalars(select(Group).where(Group.name != ADMIN_GROUP).order_by(Group.name)).all()  # administrators are made with the checkbox
+    return render(request, "user_new.html", admin, groups=groups, default_group=settings.default_group)
+
+
+@router.post("/users/new", dependencies=[Depends(verify_csrf)])
+def user_new_submit(request: Request, kind: str = Form("local"), username: str = Form(""), group_id: int = Form(0), password: str = Form(""),
+                    is_admin: str = Form(""), admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """The one form of "New user": a local account (here, with its password) or one that will sign in through RADIUS."""
+    if kind == "radius":
+        return user_create(request, username, group_id, admin, db)
+    return user_create_local(request, username, group_id, password, is_admin, admin, db)
 
 
 @router.get("/users/{user_id}/edit", response_class=HTMLResponse)

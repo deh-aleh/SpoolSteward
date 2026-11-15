@@ -2,38 +2,33 @@
 
 [Indice della documentazione](../README.md) · [English](../en/admin-guide.md) · Italiano
 
-Per chi gestisce l'installazione. Il portale è su `https://<server>:8631/` (accesso su `/login`, configurazione del primo avvio su `/setup`). Il menu in alto:
+Per chi gestisce l'installazione. Il portale è su `https://<server>:8631/` (accesso su `/login`, configurazione del primo avvio su `/setup`). Il menu è a sinistra (una barra in basso sul telefono: *Stampa*, *Scansiona*, *Registro*, *Richieste*, *Altro*). Tutti hanno **Stampa**, **Scansiona**, **Account** e **Dispositivi**; il gruppo *Gestione* è per gli amministratori:
 
 | Menu | Pagina | Cosa ci fai |
 |---|---|---|
-| **Audit** | `/admin/jobs` | Chi ha stampato o scansionato cosa; filtri, CSV, report d'uso (`/admin/report`), annullare job in coda → [audit.md](audit.md) |
-| **Utenti** | `/admin/users` | Crea utenti locali o RADIUS, modifica, reimposta la password, revoca le chiavi, elimina; apri l'[auto-registrazione](account.md#9-auto-registrazione) |
-| **Gruppi** | `/admin/groups` | Crea, rinomina, limiti, "richiedibile", elimina |
-| **Richieste** | `/admin/requests` | Approva, modifica o rifiuta le richieste di quota, di gruppo e di permesso (contatore = in attesa); concessioni attive, concessioni dirette, storico → [quote.md](quote.md) |
-| **Azioni** | `/admin/actions` | Chi ha fatto cosa nel portale |
-| **Stampanti** | `/admin/printers` | Stato, inchiostro, contatori; blocco, nascondimento, rinomina, ordine, stampanti di prova, stampa periodica e di prova → [stampanti.md](stampanti.md) |
-| **Backup** | `/admin/backups` | I tuoi backup programmati → [backup.md](backup.md) |
-| **Archivio** | `/admin/archive` | Audit vecchio compresso, consultabile e scaricabile |
-| **Stampa / Scansiona / Profilo** | `/me…` | Le stesse pagine degli utenti → [guida-utente.md](guida-utente.md) |
-| **Logo, nome e (utente)** | `/me/settings` | Tema, lingua, aggiornamento |
-| **Campanella** (amministratori) | `/admin/notices` | Cose che il gateway ha notato (il numero indica quelle aperte), vedi §8 |
-| **?** (tutti) | `/docs` | Questa documentazione, in italiano o inglese. Gli utenti che non sono amministratori vedono solo la guida utente e la guida Windows |
-| **Manutenzione** (cono stradale rosso) | — | Ferma stampa e scansione per tutti tranne gli amministratori |
-| **Porta con freccia** | — | Esci |
+| **Registro** | `/admin/jobs` | Schede: *Stampe e scansioni* (righe che si aprono; filtri, CSV, annullare una stampa in coda; l'intervallo di aggiornamento è accanto all'interruttore), *Azioni degli admin* (`/admin/actions`: chi ha fatto cosa nel portale), *Report* (`/admin/report`), *Archivio* (`/admin/archive`: righe vecchie compresse, consultabili e scaricabili) → [audit.md](audit.md) |
+| **Persone** | `/admin/users` | Schede: *Utenti* (**Nuovo utente**: locale o RADIUS; modifica, reimposta la password, revoca le chiavi, elimina), *Gruppi* (limiti, "si può chiedere"), *Registrazione* (`/admin/registration`, [auto-registrazione](account.md#9-auto-registrazione)) |
+| **Richieste** | `/admin/requests` | Schede: *In attesa* (contatore = richieste e registrazioni da decidere), *Concessioni* (concessioni attive, darne una direttamente), *Storico* → [quote.md](quote.md) |
+| **Stampanti** | `/admin/printers` | Stato, livelli, contatori; blocco, nascondimento, rinomina, ordine, stampanti di prova, stampa periodica e di prova → [stampanti.md](stampanti.md) |
+| **Sistema** | `/admin/system` | **Manutenzione** (ferma stampa e scansione per tutti tranne gli amministratori), **Aggiornamento**, **Backup** (i tuoi backup programmati → [backup.md](backup.md)) e se il **registro salva i nomi dei file** |
+| **Avvisi** | `/admin/notices` | Schede: *Per te* e *Gateway* (cose che il gateway ha notato; il contatore indica quelle aperte), vedi §8 |
+| **Guida** | `/docs` | Questa documentazione, in italiano o inglese. Gli utenti che non sono amministratori vedono solo la guida utente e la guida Windows |
+| **Impostazioni** | `/me/settings` | Tema, lingua, avvisi, password |
+| **Esci** | — | In fondo al menu, accanto al tuo nome |
 
 ## 1. Primi passi
 
 1. Imposta la password di `administrator` con il codice monouso ([installazione.md](installazione.md#36-primo-amministratore)).
-2. Crea il **tuo** account amministratore (Utenti → crea → amministratore) e usa quello ogni giorno. `administrator` è l'account di emergenza: nessun gruppo, nessuna quota, nessun permesso; tienilo per il recupero.
-3. Modifica i limiti del gruppo **default** (Gruppi) e crea gruppi per chi ha bisogno di limiti diversi.
+2. Crea il **tuo** account amministratore (Persone → Nuovo utente → amministratore) e usa quello ogni giorno. `administrator` è l'account di emergenza: nessun gruppo, nessuna quota, nessun permesso; tienilo per il recupero.
+3. Modifica i limiti del gruppo **default** (Persone → Gruppi) e crea gruppi per chi ha bisogno di limiti diversi.
 4. Crea gli utenti, o lascia entrare quelli RADIUS. Di' a tutti di creare una chiave di stampa ([guida-utente.md](guida-utente.md)).
 5. Imposta un backup ([backup.md](backup.md)).
 
 ## 2. Utenti
 
-L'elenco è in sola lettura: limite proprio o ereditato (in corsivo), concessioni attive come `+N` colorato, consumo e chiavi attive. **Modifica** apre la pagina con tutti i campi e l'**origine** dell'account (locale o RADIUS, informativa); **Elimina** chiede di scrivere il nome.
+L'elenco è in sola lettura: per ogni utente il gruppo, stampe e pagine usate sul limite ("3 di 10 a settimana"; un punto indica un valore diverso da quello del gruppo; "20 + 5 concesse" con una quota extra) e le chiavi attive. Cliccare la riga apre la pagina con tutti i campi e l'**origine** dell'account (locale o RADIUS, informativa); **Elimina account** chiede di scrivere il nome.
 
-![La pagina Utenti: l'amministratore e un utente locale che deve cambiare la password, con gruppo, limiti, consumo della settimana e chiavi](../images/it/admin-users.png)
+![La pagina Persone, scheda Utenti: una riga per ogni utente con gruppo, stampe e pagine usate sul limite, chiavi e stato](../images/it/admin-users.png)
 
 - **Locale**: si mostra una password temporanea una volta; l'utente la cambia al primo accesso. **Reimposta password** ne dà una nuova. **RADIUS**: scegli il gruppo; la persona entra con la password d'ufficio.
 - **Chiavi** (`/admin/users/<id>/keys`): **disattiva** (la scadenza continua a scorrere), **prolunga** (conta da oggi) o **revoca** ogni chiave; «Revoca tutte» ferma ogni dispositivo dell'utente. L'utente riceve una notifica per ogni azione (non per le sue). Le chiavi revocate e scadute spariscono dopo `SPOOLSTEWARD_KEY_HISTORY_DAYS`.
@@ -44,18 +39,18 @@ L'elenco è in sola lettura: limite proprio o ereditato (in corsivo), concession
 
 Un gruppo ha dei limiti (job / pagine, settimanali / mensili) e un flag **richiedibile**. I gruppi di sistema `default` e `administrator` non si eliminano; eliminare un altro gruppo sposta i suoi utenti in `default`. I limiti personali sono nella pagina di modifica dell'utente. Dettagli: [quote.md](quote.md).
 
-![La pagina Gruppi: i due gruppi di sistema senza limiti e un gruppo con 10 job e 20 pagine a settimana a cui gli utenti possono chiedere di unirsi](../images/it/admin-groups.png)
+![La scheda Gruppi: ogni gruppo con i suoi membri, i limiti e il periodo, e l'etichetta di un gruppo a cui gli utenti possono chiedere di unirsi](../images/it/admin-groups.png)
 
 I **Permessi avanzati** (colore, solo fronte, stampanti, giorni e orari) sono in fondo alla pagina del gruppo e dell'utente. `SPOOLSTEWARD_PERMISSION_MODE` decide se un client che chiede in modo esplicito qualcosa di non consentito viene corretto (`adjust`, predefinito) o rifiutato (`refuse`): leggi prima
 [quote.md](quote.md#5-permessi-avanzati). All'utente arriva un avviso quando cambi i suoi permessi propri e quando un suo lavoro viene rifiutato o corretto.
 
 ## 4. Richieste e concessioni
 
-Una sola pagina, *Richieste*, in tre parti:
+*Richieste* ha tre schede:
 
-- **Richieste in attesa**: modifica quantità o tipo prima di approvare, aggiungi una sola nota (l'utente la vede). Una richiesta di permesso si approva *permanente* oppure *fino alla fine del* giorno scelto. Due approvazioni simultanee concedono una volta sola.
-- **Concessioni attive**: quota extra e permessi che contano adesso; li revochi, o ne dai uno direttamente con una nota (scegli *quota* o *un permesso*).
-- **Storico** (chiuso finché non lo apri): ultime decisioni e concessioni che non contano più. *Elimina le concessioni scadute* toglie quelle (di entrambi i tipi); il registro degli amministratori conserva chi ha concesso cosa.
+- **In attesa**: modifica quantità o durata prima di approvare (si aprono con **Approva**, già compilate con ciò che l'utente ha chiesto), aggiungi una sola nota (l'utente la vede). Una richiesta di permesso si approva *permanente* oppure *fino alla fine del* giorno scelto. Due approvazioni simultanee concedono una volta sola.
+- **Concessioni**: quota extra e permessi che contano adesso; li revochi, o ne dai uno direttamente con una nota (scegli *quota* o *un permesso*).
+- **Storico**: ultime decisioni e concessioni che non contano più. *Elimina le concessioni scadute* toglie quelle (di entrambi i tipi); il registro degli amministratori conserva chi ha concesso cosa.
 
 Altri dettagli in [quote.md](quote.md#chiedere-un-permesso). Tutto viene registrato.
 
@@ -85,13 +80,13 @@ Dentro il contenitore: `docker compose exec gateway spoolsteward-admin <comando>
 
 - Salute: `GET /healthz` → 200 o 503, corpo `{"status":"ok"}`, senza login. `SPOOLSTEWARD_HEALTHZ_INFO=version,printers` aggiunge altro. Log: `docker compose logs gateway`.
 - Le migrazioni partono da sole all'avvio. Fai un backup prima di aggiornare un database importante.
-- Nomi dei file nell'audit: il pulsante verde/rosso in alto a destra in *Audit* smette di salvarli; `.env` può cancellarli dopo qualche giorno o cifrarli ([protezione-dati.md](protezione-dati.md)).
-- Aggiornamenti: in cima compare un avviso quando esiste una release più nuova. Aggiorna con `scripts/update.sh`, oppure con il pulsante *Aggiorna* in *Backup* quando gira il contenitore facoltativo updater e c'è un backup programmato funzionante ([installazione.md](installazione.md#5-aggiornamenti)). L'updater controlla Docker, cioè tutto il server: tienilo spento se non ti serve.
+- Nomi dei file nel registro: l'interruttore *Salva i nomi dei file* in *Sistema* smette di salvarli; `.env` può cancellarli dopo qualche giorno o cifrarli ([protezione-dati.md](protezione-dati.md)).
+- Aggiornamenti: in cima compare un avviso quando esiste una release più nuova. Aggiorna con `scripts/update.sh`, oppure con il pulsante *Aggiorna* in *Sistema* quando gira il contenitore facoltativo updater e c'è un backup programmato funzionante ([installazione.md](installazione.md#5-aggiornamenti)). L'updater controlla Docker, cioè tutto il server: tienilo spento se non ti serve.
 - Non lasciare account o stampanti di prova su un'installazione vera. Proteggi `config/`, `.env`, `data/` e il volume: contengono segreti e dati personali.
 
 ## 8. Avvisi (la campanella)
 
-La campanella elenca ciò che il gateway ha notato e nessuno ha chiesto, con l'ultima volta, la fonte e quante volte è successo; *Chiudi* lo chiude (registrato in *Azioni*).
+La voce *Avvisi* (con un contatore quando c'è qualcosa di nuovo) elenca ciò che il gateway ha notato e nessuno ha chiesto, con l'ultima volta, la fonte e quante volte è successo; *Chiudi* lo chiude (registrato in *Azioni degli admin*).
 
 | Avviso | Significato | Si chiude da solo quando |
 |---|---|---|

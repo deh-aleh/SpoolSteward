@@ -11,11 +11,11 @@ There are two independent mechanisms:
 | When | scheduled, once a day | by hand |
 | Use for | everyday protection | **moving the machine** |
 
-## 1. Built-in backups (menu *Backup*)
+## 1. Built-in backups (*System* page)
 
-Every administrator creates **their own** targets, with folder, hour, copies to keep (last N daily, weekly, monthly) and encryption. They edit and delete only their own; *Run now* is available to all. The *General* backup is shown read-only: it is set in `.env` (`SPOOLSTEWARD_BACKUP_*`).
+Every administrator creates **their own** targets, with folder, hour, copies to keep (last N daily, weekly, monthly) and encryption. They edit and delete only their own (*Edit*, *Suspend* and *Delete* are in the ⋯ menu of the row); *Run now* is available to all. The *General* backup is shown read-only: it is set in `.env` (`SPOOLSTEWARD_BACKUP_*`).
 
-![A backup target: owner, folder, time, copies kept, encryption with a passphrase, the last result and the buttons Run now, Edit, Suspend and Delete](../images/en/admin-backup.png)
+![The System page: maintenance, update, and a backup with its name and owner, folder, time, copies kept, encryption, last successful run and the Run now button](../images/en/admin-backup.png)
 
 - A backup is written to `.partial`, **read back and verified**, renamed; only then are older copies removed (only files with the same gateway and target name). *Run now* adds a copy without deleting any.
 - If a backup failed, or the last one is older than 48 h, the page shows it in red **and a notice appears in the bell** with the backup's name (below); it closes at the first successful backup.
@@ -41,7 +41,7 @@ Only inside `data/backups` (`BACKUP_DIR`, mounted at `/backups`); an administrat
 
 With a network disk:
 
-- A disk that does not answer: the *Backup* page loads in about 6 seconds and shows the problem; a backup fails after 20 seconds ("The backup disk did not answer…"); at most 4 requests wait on a dead disk. With the marker on, an unmounted disk never receives a file ("The marker file is missing…").
+- A disk that does not answer: the *System* page loads in about 6 seconds and shows the problem; a backup fails after 20 seconds ("The backup disk did not answer…"); at most 4 requests wait on a dead disk. With the marker on, an unmounted disk never receives a file ("The marker file is missing…").
 - On SMB/CIFS and some NFS setups permissions are decided by the mount options, **not** by the gateway: `chmod 600` has no effect, so **use encryption** for backups on a share. Use `soft` mounts (NFS: `soft,timeo=100`; CIFS: `soft`), never `hard`, so a dead NAS does not freeze the server.
 - A disk that stops answering **while a backup is written** can leave it stuck: the next ones say "Another backup is running" until `docker compose restart gateway`. Nothing already saved is lost.
 - A backup is "outside the machine" only if the share is on another machine: a USB disk in the server protects from a broken disk, not from a fire.

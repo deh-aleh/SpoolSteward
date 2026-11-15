@@ -201,7 +201,7 @@ async def test_physical_printers_come_first_oldest_connection_first(cups):
     cups.app.state.queues_cache = None
     assert order(await list_queues(cups.app)) == ["col1", "mono1", "aaa-new", "virtual", "debugprinter0"]
     page = (await cups.get("/admin/printers")).text
-    names = re.findall(r'<b class="mono">([^<]+)</b>\s*\n', page)
+    names = re.findall(r'<span class="mono prq-name">([^<]+)</span>', page)
     assert names == ["col1", "mono1", "aaa-new", "virtual", "debugprinter0"]
     assert [m for m in re.findall(r'value="([^"]+)"\s+(?:checked\s+)?required', (await cups.get("/me/print")).text)] == names
 
@@ -329,7 +329,7 @@ async def test_offline_printer_is_skipped_and_retried_when_back(cups, monkeypatc
     assert await keepalive.run_due(cups.app) == 0 and cups.fake.jobs == []
     with cups.sm() as s:
         assert s.get(PrinterKeepalive, "col1").last_status == "offline" and s.get(PrinterKeepalive, "col1").last_attempt_at is None
-    assert "I will retry as soon as it answers" in (await cups.get("/admin/printers")).text
+    assert "the page is printed as soon as it is back" in (await cups.get("/admin/printers")).text
     async def up(uri, usb_present=None):
         return True
     monkeypatch.setattr(cc, "is_online", up)

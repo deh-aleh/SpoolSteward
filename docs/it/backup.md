@@ -11,11 +11,11 @@ Esistono due meccanismi indipendenti:
 | Quando | programmato, una volta al giorno | a mano |
 | Serve per | la protezione di ogni giorno | **spostare la macchina** |
 
-## 1. Backup integrati (menu *Backup*)
+## 1. Backup integrati (pagina *Sistema*)
 
 Ogni amministratore crea i **propri** backup programmati, con cartella, ora, copie da tenere (ultime N giornaliere, settimanali, mensili) e cifratura. Modifica ed elimina solo i propri; *Esegui ora* è disponibile a tutti. Il backup *Generale* si mostra in sola lettura: si imposta in `.env` (`SPOOLSTEWARD_BACKUP_*`).
 
-![Un backup programmato: proprietario, cartella, ora, copie tenute, cifratura con passphrase, ultimo esito e i pulsanti Esegui ora, Modifica, Sospendi ed Elimina](../images/it/admin-backup.png)
+![La pagina Sistema: manutenzione, aggiornamento e un backup con nome e proprietario, cartella, ora, copie tenute, cifratura, ultimo riuscito e il pulsante Esegui ora](../images/it/admin-backup.png)
 
 - Un backup è scritto in `.partial`, **riletto e verificato**, rinominato; solo dopo si tolgono le copie vecchie (solo file con lo stesso nome di gateway e destinazione). *Esegui ora* aggiunge una copia senza cancellarne.
 - Se un backup è fallito, o l'ultimo ha più di 48 h, la pagina lo mostra in rosso **e nella campanella compare un avviso** con il nome del backup (più sotto); si chiude al primo backup riuscito.

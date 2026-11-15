@@ -134,7 +134,7 @@ async def test_unplugging_a_scanner_removes_it_and_plugging_it_back_restores_it(
     assert ">beta<" in (await two_scanners.get("/me/scan")).text
     two_scanners.state["down"].update({"scan-a", "scan-b"})
     two_scanners.app.state.scanners_cache = None
-    assert "No scanner available" in (await two_scanners.get("/me/scan")).text
+    assert "No scanner is answering." in (await two_scanners.get("/me/scan")).text
 
 
 # ---------------------------------------------------------------- printers: the cable pulled
@@ -161,8 +161,8 @@ async def test_a_printer_that_does_not_answer_is_unreachable_everywhere(stack, m
     monkeypatch.setattr(cc, "is_online", dead)
     monkeypatch.setattr(printers_mod, "is_online", dead)
     page = (await stack.get("/admin/printers")).text
-    assert "NOT REACHABLE" in page and "The device does not answer" in page and "Ink left" not in page
-    assert 'name="queue" value="virtual"' not in (await stack.get("/me/print")).text and "Not reachable right now" in (await stack.get("/me/print")).text
+    assert "Not answering" in page and "Levels" not in page
+    assert 'name="queue" value="virtual"' not in (await stack.get("/me/print")).text and "No printer is answering." in (await stack.get("/me/print")).text
     tok = await csrf_of_page(stack, "/me")
     r = await stack.post("/me/print", data={"queue": "virtual", "copies": "1", "csrf_token": tok},
                          files={"file": ("a.pdf", b"%PDF-1.4\n%%EOF\n", "application/pdf")})
@@ -178,7 +178,7 @@ async def test_a_printer_that_does_not_answer_is_unreachable_everywhere(stack, m
 @requires_cups
 async def test_a_printer_that_answers_is_reachable(stack):
     page = (await stack.get("/admin/printers")).text
-    assert "NOT REACHABLE" not in page and 'value="virtual"' in (await stack.get("/me/print")).text
+    assert "Not answering" not in page and 'value="virtual"' in (await stack.get("/me/print")).text
 
 
 # ---------------------------------------------------------------- test printers
@@ -254,13 +254,13 @@ async def test_actions_filters_suggest_administrators_and_known_actions(portal):
     assert "ul.suggest" in app_css and "addEventListener('focus', show)" in app_js                  # opens on click, narrows as you type
 
 
-async def test_print_and_scan_forms_are_centred(portal):
+async def test_print_and_scan_pages_have_their_layout(portal):
     make_user(portal.sm, "pia", password=GOOD)
     await portal_login(portal, "pia", GOOD)
     portal.app.state.scan = None
-    for path in ("/me/print", "/me/scan"):
-        page = (await portal.get(path)).text
-        assert 'class="formpage"' in page, path
+    portal.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "p1", "info": "", "model": "", "online": True}])
+    assert 'class="printcols"' in (await portal.get("/me/print")).text      # the sheet beside the options
+    assert 'class="scancols"' in (await portal.get("/me/scan")).text        # the form beside the latest scans
 
 
 async def test_scan_without_credentials_is_refused_and_reported_once(two_scanners, monkeypatch):

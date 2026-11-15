@@ -2,6 +2,7 @@
 
 import logging
 from datetime import date, datetime
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -54,8 +55,23 @@ def _grant_state(g: QuotaGrant | PermissionGrant, now: datetime) -> str:
 
 @router.get("/requests", response_class=HTMLResponse)
 async def requests_page(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
-    """One page for both sides of the same thing: the requests waiting for a decision, the grants they (or an
-    administrator directly) produced, and the history."""
+    """The requests (and the registrations) waiting for a decision."""
+    return await _page(request, admin, db, "pending")
+
+
+@router.get("/requests/grants", response_class=HTMLResponse)
+async def grants_page(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """The grants that count: the ones a request produced and the ones an administrator gave directly."""
+    return await _page(request, admin, db, "grants")
+
+
+@router.get("/requests/history", response_class=HTMLResponse)
+async def history_page(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """The decisions, and the grants that no longer count."""
+    return await _page(request, admin, db, "history")
+
+
+async def _page(request: Request, admin: User, db: Session, tab: str):
     now = now_utc()
     grants.expire_requests(db, now)
     registration.expire(db, now)
@@ -73,7 +89,15 @@ async def requests_page(request: Request, admin: User = Depends(current_admin), 
     rows.sort(key=lambda x: aware(x["g"].created_at),
               reverse=True)
     queues = sorted((q["name"] for q in await list_queues(request.app)), key=queue_key)
-    return render(request, "requests.html", admin, registrations=registration.pending(db, now), pending=wrap(pending), done=wrap(done),
+    # a grant an administrator gave without a request is a decision too: it goes in the same list, as approved
+    metric_of = {id(x): x["g"].metric.value for x in rows if x["kind"] != "permission"}
+    direct = [{"r": SimpleNamespace(decided_at=x["g"].created_at, created_at=x["g"].created_at, status=SimpleNamespace(value="approved"),
+                                    scope=None, decision_note=x["g"].note),
+               "user": x["user"], "by": x["by"],
+               "text": (x["what"] if x["kind"] == "permission" else f"+{x['g'].amount} {_(metric_of[id(x)])}")}
+              for x in rows if x["g"].request_id is None]
+    decisions = sorted(wrap(done) + direct, key=lambda p: aware(p["r"].decided_at or p["r"].created_at), reverse=True)[:50]
+    return render(request, "requests.html", admin, tab=tab, registrations=registration.pending(db, now), pending=wrap(pending), done=decisions,
                   active=[x for x in rows if x["state"] == "active"], ended=[x for x in rows if x["state"] != "active"],
                   usernames=sorted(u for u in names.values()), queues=queues, today=now.astimezone(local_tz()).date().isoformat())
 
@@ -179,7 +203,7 @@ def grant_create(request: Request, username: str = Form(""), kind: str = Form("q
         flash(request, _("Grant created for %(user)s", user=user.username))
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
-    return back("/admin/requests")
+    return back("/admin/requests/grants")
 
 
 @router.post("/grants/{grant_id}/revoke", dependencies=[Depends(verify_csrf)])
@@ -195,7 +219,7 @@ def grant_revoke(request: Request, grant_id: int, admin: User = Depends(current_
         flash(request, _("Grant revoked"))
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
-    return back("/admin/requests")
+    return back("/admin/requests/grants")
 
 
 @router.post("/permission-grants/{grant_id}/revoke", dependencies=[Depends(verify_csrf)])
@@ -211,7 +235,7 @@ def permission_grant_revoke(request: Request, grant_id: int, admin: User = Depen
         flash(request, _("Grant revoked"))
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
-    return back("/admin/requests")
+    return back("/admin/requests/grants")
 
 
 @router.post("/grants/purge", dependencies=[Depends(verify_csrf)])
@@ -220,4 +244,4 @@ def grants_purge(request: Request, admin: User = Depends(current_admin), db: Ses
     stays in the administrators' log."""
     n = grants.purge_ended(db, admin, now_utc())
     flash(request, ngettext("%(n)s ended grant deleted", "%(n)s ended grants deleted", n, n=n) if n else _("No ended grants to delete"))
-    return back("/admin/requests")
+    return back("/admin/requests/history")

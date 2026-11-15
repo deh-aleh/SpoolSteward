@@ -576,8 +576,8 @@ async def test_web_form_outside_the_hours_shows_the_window_and_refuses(web, monk
 async def test_the_profile_and_the_key_page_list_only_allowed_printers_and_show_the_permissions(web):
     limit(web, printers_mode="list", printers=["bw"], color=False)
     page = (await web.get("/me")).text
-    assert "Your permissions" in page and "not allowed: prints are made in black and white" in page
-    avail = page.split("Available printers:")[1].split("</p>")[0]
+    assert "What you can print" in page and "No, prints come out black and white" in page
+    avail = (await web.get("/me/keys")).text.split("Available printers:")[1].split("</p>")[0]
     assert "bw" in avail and "color" not in avail
     r = await web.post("/me/keys", data={"label": "pc", "csrf_token": web.token})
     assert "/printers/bw" in r.text and "/printers/color" not in r.text
@@ -614,7 +614,7 @@ def user_form(cl, uid, **extra):
 async def test_group_permissions_round_trip_through_the_form(adm):
     gid = gid_of(adm.sm, "staff")
     page = (await adm.get(f"/admin/groups/{gid}/edit")).text
-    assert '<details class="adv" >' in page and "Advanced permissions" in page          # defaults only: closed
+    assert '<details class="adv more" >' in page and "Advanced permissions" in page          # defaults only: closed
     r = await adm.post(f"/admin/groups/{gid}", data=group_form(adm, perm_printers="list", perm_printer=["Color", "bw"], perm_hours="window",
                                                               perm_day=["0", "1", "2"], perm_start="22:00", perm_end="06:00"))
     assert r.status_code == 303
@@ -625,7 +625,7 @@ async def test_group_permissions_round_trip_through_the_form(adm):
         audit_row = s.scalars(select(AdminAudit).where(AdminAudit.action == "group.update")).one()
         assert audit_row.detail_json["permissions"]["printers"] == [None, ["bw", "color"]]
     page = (await adm.get(f"/admin/groups/{gid}/edit")).text
-    assert 'value="22:00"' in page and 'value="06:00"' in page and '<details class="adv" open>' in page
+    assert 'value="22:00"' in page and 'value="06:00"' in page and '<details class="adv more" open>' in page
     r = await adm.post(f"/admin/groups/{gid}", data=group_form(adm, perm_color="1", perm_one_sided="1", perm_printers="all", perm_hours="any"))
     with adm.sm() as s:
         assert permissions.get_rule(s, SubjectType.group, gid) is None                     # all defaults: nothing stored

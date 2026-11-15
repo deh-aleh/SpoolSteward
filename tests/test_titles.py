@@ -202,12 +202,13 @@ async def test_portal_button_search_and_csv(portal, key):
     await portal_login(portal, "ada", GOOD)
     page = (await portal.get("/admin/jobs?q=smith")).text
     assert "invoice-smith.pdf" in page and "menu.pdf" not in page
-    assert "tdot off" not in page                                   # green: names are saved
+    assert 'aria-checked="true" aria-labelledby="titles-t"' in (await portal.get("/admin/system")).text       # the switch is on: names are saved
     assert "invoice-smith.pdf" in (await portal.get("/admin/jobs.csv?q=smith")).text
 
     csrf = await csrf_of_page(portal, "/admin/jobs")
     r = await portal.post("/admin/jobs/titles", data=dict(csrf_token=csrf, on="0"))
     assert r.status_code == 303
-    assert "tdot off" in (await portal.get("/admin/jobs")).text    # red
+    assert r.headers["location"] == "/admin/system#log"
+    assert 'aria-checked="false" aria-labelledby="titles-t"' in (await portal.get("/admin/system")).text    # the switch is off
     with portal.sm() as s:
         assert not control.titles_enabled(s)

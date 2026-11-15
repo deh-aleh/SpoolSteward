@@ -1,17 +1,17 @@
+.rq .end { gap:8px } .rq .end form { margin:0 }
+.rq-item .r2 { align-items:start }
+details.decide-d { position:relative } details.decide-d > summary { list-style:none; cursor:pointer; min-height:36px; padding:0 14px; display:inline-flex; align-items:center; border-radius:5px; background:var(--key); color:var(--key-fg); font-weight:600 }
+details.decide-d > summary::-webkit-details-marker { display:none }
+details.decide-d[open] > summary { background:var(--card); color:var(--fg); border:1px solid var(--control) }
+details.decide-d > .decide { position:absolute; right:0; top:calc(100% + 4px); z-index:50; width:min(380px,86vw); padding:12px; background:var(--card); border:1px solid var(--control); border-radius:6px }
 .decide { display:flex; flex-direction:column; gap:10px; min-width:270px }
 .decide .dline { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center }
 .decide .amt { display:inline-flex; align-items:center; gap:8px }
 .decide input[type=text] { width:100% }
 .decide .untilbox { display:none }
 .decide:has(input[name=duration][value=until]:checked) .untilbox { display:block }
-.reasontext { font:inherit; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; max-height:50vh; overflow:auto }
-@media (max-width:700px) { .decide { min-width:0 } .decide .dbuttons > * { flex:1 1 100% } .decide .seg { width:100% } .decide .seg label { flex:1 } .decide .seg span { text-align:center; white-space:normal } }
 #grantform [hidden] { display:none !important }
 #grantform .grantpart { margin-top:10px } #grantform .grantlabel { font-weight:600; margin-bottom:6px }
-.rq-x-svg.rq-x-svg { stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round }
-#grantform.rq-grant { margin-top:14px }
-.rq-mt10.rq-mt10 { margin-top:10px }
-.rq-mt14.rq-mt14 { margin-top:14px }
-p.rq-mt0.rq-mt0 { margin-top:0 }
-details.rq-hist { margin:14px 0 }
-details.rq-hist .advbody { background:var(--card) }
+.rq-mt10 { margin-top:10px }
+@media (max-width:700px) { .decide { min-width:0 } .decide .dbuttons > * { flex:1 1 100% } details.decide-d > .decide { position:static; width:100%; margin-top:8px } .rq .end { flex-wrap:wrap } }
+details.hist > summary + * { margin-top:4px } .hist-blk { display:flex; flex-wrap:wrap; align-items:flex-start; gap:0 12px } .hist-blk > details { flex:1 1 320px; min-width:0 } .hist-blk > form { margin:14px 0 0; order:2 }

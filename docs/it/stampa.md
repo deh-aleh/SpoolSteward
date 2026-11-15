@@ -19,7 +19,7 @@ Ci sono due modi di stampare: attraverso l'**indirizzo IPP del gateway** (comput
 
 ## 2. Stampare con l'indirizzo IPP
 
-Indirizzo: `ipps://<server>:8631/printers/<coda>`. Il client si autentica con HTTP Basic: **nome utente + chiave di stampa** (creata in *Profilo*; vedi [account.md](account.md)). La password di dominio non stampa.
+Indirizzo: `ipps://<server>:8631/printers/<coda>`. Il client si autentica con HTTP Basic: **nome utente + chiave di stampa** (creata in *Dispositivi*; vedi [account.md](account.md)). La password di dominio non stampa.
 
 | Dispositivo | Come collegarlo | Stato |
 |---|---|---|

@@ -68,17 +68,17 @@ when it creates `.env`; it never touches an existing one (it prints a warning th
 
 | Symptom | Cause and fix |
 |---|---|
-| The client asks for the password again and again | The **domain password does not work for printing**: use a print key from *Profile* (`SPOOLSTEWARD_IPP_AUTH=keys`). Or the pair (user, IP) is locked out. |
+| The client asks for the password again and again | The **domain password does not work for printing**: use a print key from *Devices* (`SPOOLSTEWARD_IPP_AUTH=keys`). Or the pair (user, IP) is locked out. |
 | `Forbidden` / HTML 426 from CUPS | CUPS policy is not the gateway's: use `docker/stack/cups/cupsd.conf` (`DefaultAuthType None`). |
 | 502 from the gateway | CUPS is stopped or `SPOOLSTEWARD_CUPS_URL` is wrong. `docker compose logs cups`. |
 | Job refused: "printing is allowed only…", "colour printing is not allowed…", "not allowed to use that printer" | The permissions of the user's group or own rule ([quotas.md](quotas.md#5-advanced-permissions)). The user's profile lists what is allowed and offers a request. |
 | Job rejected with a quota message | The user reached a limit; the message includes the portal link to ask for more. See [quotas.md](quotas.md). |
 | "printer is blocked" / "gateway is in maintenance" | An administrator blocked the printer or switched maintenance mode on ([printers.md](printers.md)). Administrators can still print during maintenance. |
 | Job stays `accepted` forever | The reconciler cannot reach CUPS: look for `reconcile:` in the log. |
-| The printer is shown NOT REACHABLE and is missing from the print form | The device does not answer (off, unplugged, USB asleep). Detection can lag ~30 s; for network queues it is a TCP check. |
+| The printer is shown *Not answering* and is missing from the print form | The device does not answer (off, unplugged, USB asleep). Detection can lag ~30 s; for network queues it is a TCP check. |
 | `:60000` does not answer | `ipp-usb` is not running or the printer is not seen: `docker compose logs ipp-usb`; replug the USB cable; make sure the **host's** `ipp-usb`/SANE are stopped and masked. |
 | A new USB printer does not appear | Wait up to a minute or press **Look now** in Printers; check `docker compose logs gateway \| grep discovery`. If the page says "CUPS has no driver for it", add one to `docker/stack/Dockerfile`. Make sure the **host's** `ipp-usb`/SANE are stopped and `SPOOLSTEWARD_AUTO_DISCOVER` is not `false`. |
-| An unplugged printer is still listed | It shows NOT REACHABLE with a countdown (USB queues, `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS`) and a **Delete queue** button. Network queues are never removed by themselves. |
+| An unplugged printer is still listed | It shows *Not answering since…* with the date the queue will be removed (USB queues, `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS`) and a **Remove the queue** button. Network queues are never removed by themselves. |
 | A queue I deleted does not come back, although it is in `CUPS_QUEUES` | By design: each queue of `CUPS_QUEUES` (and `virtual`) is created once. To create it again: `scripts/queue-restore.sh NAME --reboot` (without `--reboot` the queue returns at the next start); `--list` shows the remembered names. The queue must still be in `CUPS_QUEUES`. |
 | The queue was not created | `CUPS_QUEUES` is wrong, or the printer answered late. The entrypoint retries for 5 minutes; otherwise `docker compose exec cups lpadmin -p NAME -E -v URI -m everywhere`. |
 | A "Create-Job" without a document keeps quota | Quota is freed only when CUPS cancels it (default after 3 h). |

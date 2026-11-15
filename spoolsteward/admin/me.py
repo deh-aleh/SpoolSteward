@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from spoolsteward.timeutil import local_tz, now_utc
 from spoolsteward.netutil import public_host
 from spoolsteward.admin.common import (
-    back, client_ip, current_user, flash, get_db, render, session_stamp, verify_csrf,
+    back, client_ip, current_user, flash, get_db, render, safe_next, session_stamp, verify_csrf,
 )
 from urllib.parse import quote
 
@@ -24,12 +24,15 @@ from spoolsteward.auth.throttle import USER_FAILS
 from spoolsteward import i18n
 from spoolsteward.config import settings
 from spoolsteward.i18n import N_, _
+from spoolsteward.admin.audit_view import recent_jobs
 from spoolsteward.db.models import Group, PrintKey, QuotaRequest, RequestKind, RequestStatus, User
+from spoolsteward.escl import scanner_device
 from spoolsteward.policy import grants, permissions
 
 log = logging.getLogger("spoolsteward.me")
-THEMES = {"auto": N_("Automatic (as the device)"), "light": N_("Light"), "dark": N_("Dark")}
+THEMES = {"auto": N_("Like the system"), "light": N_("Light"), "dark": N_("Dark")}
 router = APIRouter(prefix="/me")
+menu_router = APIRouter()
 
 
 def _describe(db: Session, req: QuotaRequest) -> str:
@@ -53,29 +56,47 @@ def _waiting_permissions(db: Session, user: User, now: datetime) -> set[str]:
     return out
 
 
+def quota_rows(db: Session, user: User, now: datetime | None = None) -> list[dict]:
+    """One row per limit that applies to the person: what was used, the total (limit plus grants) and what is left."""
+    out = []
+    for o in grants.quota_options(db, user, now or now_utc(), local_tz()):
+        total = o["limit"] + o["extra"]
+        out.append({**o, "total": total, "left": max(total - o["used"], 0)})
+    return sorted(out, key=lambda o: o["metric"] != "pages")   # pages first: it is the limit people think about
+
+
+RECENT = 10  # prints and scans shown on the account page
+
+
 @router.get("", response_class=HTMLResponse)
 async def me(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     now = now_utc()
     grants.expire_requests(db, now)
-    key_rows = db.scalars(select(PrintKey).where(PrintKey.user_id == user.id).order_by(PrintKey.id.desc())).all()
     reqs = db.scalars(select(QuotaRequest).where(QuotaRequest.user_id == user.id).order_by(QuotaRequest.id.desc())
                       .limit(20)).all()
+    deciders = {u.id: u.username for u in db.scalars(select(User).where(User.id.in_({r.decided_by for r in reqs if r.decided_by})))} if reqs else {}
     perms = permissions.effective(db, user, now)
     every_queue = await list_queues(request.app)
     queues = permissions.allowed_queues(perms, every_queue)  # only what this account may print on
+    quota = quota_rows(db, user, now)
     return render(
         request, "me.html", user, perms=perms, can_ask_printer=len(queues) < len(every_queue),
         perm_grants=_grant_lines(permissions.active_grants(db, user, now)), perm_window=permissions.describe_window(perms.window) if perms.window else "",
         in_hours=permissions.in_window(perms.window, now, local_tz()),
         waiting=_waiting_permissions(db, user, now),
         group=db.get(Group, user.group_id) if user.group_id else None,
-        options=grants.quota_options(db, user, now, local_tz()),
-        active_keys=sum(1 for k in key_rows if keylib.key_is_usable(k, now)),
-        requests=[{"r": r, "what": _describe(db, r)} for r in reqs],
-        server=public_host(request), ipp_mode=settings.ipp_auth,
+        quota=quota, one_reset=len({o["window_end"] for o in quota}) <= 1,
+        requests=[{"r": r, "what": _describe(db, r), "by": deciders.get(r.decided_by)} for r in reqs],
+        recent=recent_jobs(db, user, await scanner_device(request.app), RECENT),
         queues=queues,
         can_request_group=not is_emergency(user) and bool(db.scalars(select(Group).where(Group.requestable, Group.id != (user.group_id or 0))).first()),
     )
+
+
+@menu_router.get("/menu", response_class=HTMLResponse)
+def menu_page(request: Request, user: User = Depends(current_user)):
+    """The phone's "More": the entries that do not fit in the bar at the bottom, as plain links (works without scripts)."""
+    return render(request, "menu.html", user)
 
 
 # ------------------------------------------------------------------ print keys
@@ -88,7 +109,7 @@ async def key_create(request: Request, label: str = Form(""), validity: str = Fo
         row, plain = keylib.create_key(db, user, label, ttl, once=once)
     except ValueError as exc:
         flash(request, str(exc), "err")
-        return back("/me")
+        return back("/me/keys")
     if user.is_admin:
         record(db, user, "key.create", "print_key", row.id, label=row.label)
         db.commit()
@@ -104,23 +125,24 @@ async def key_create(request: Request, label: str = Form(""), validity: str = Fo
     ]
     return render(request, "secret_shown.html", user, title=_("New print key"), what=_("Print key"), secret=plain,
                   commands=commands,
-                  note=_("Shown only now. Use it as the PASSWORD when your computer or phone asks to sign in to the printer; "
+                  note=_("Shown only now. Use it as the password when your computer or phone asks to sign in to the printer; "
                          "the user name is %(user)s. It expires on %(date)s and works only for printing. "
                          "If you lose it or lose the device, revoke it here and create another.", user=user.username, date=expires)
                        if not row.single_use else
-                       _("Shown only now. Use it as the PASSWORD when your computer or phone asks to sign in to the printer; "
-                         "the user name is %(user)s. It works for ONE print only, and only until %(date)s if nobody uses it. "
+                       _("Shown only now. Use it as the password when your computer or phone asks to sign in to the printer; "
+                         "the user name is %(user)s. It works for one print only, and only until %(date)s if nobody uses it. "
                          "Create another one for the next print.", user=user.username, date=expires),
                   next_url="/me/keys")
 
 
 @router.get("/keys", response_class=HTMLResponse)
-def keys_page(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
+async def keys_page(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
     now = now_utc()
     rows = db.scalars(select(PrintKey).where(PrintKey.user_id == user.id).order_by(PrintKey.id.desc())).all()
+    queues = permissions.allowed_queues(permissions.effective(db, user, now), await list_queues(request.app))
     return render(request, "keys.html", user, owner=user, keys=keylib.listing(rows, now),
                   choices=keylib.duration_choices(user), default_choice=str(keylib.default_duration(user)),
-                  base="/me/keys", own=True, server=public_host(request), ipp_mode=settings.ipp_auth)
+                  base="/me/keys", own=True, server=public_host(request), ipp_mode=settings.ipp_auth, queues=queues)
 
 
 @router.post("/keys/revoke-all", dependencies=[Depends(verify_csrf)])
@@ -158,8 +180,33 @@ def password_form(request: Request, user: User = Depends(current_user)):
 
 @router.get("/settings", response_class=HTMLResponse)
 def settings_page(request: Request, user: User = Depends(current_user)):
-    return render(request, "settings.html", user, themes=THEMES, refresh_min=REFRESH_MIN, refresh_max=REFRESH_MAX,
-                  secondary_max=SECONDARY_MAX)
+    return render(request, "settings.html", user, themes=THEMES, themes_view=[(k, _(v)) for k, v in THEMES.items()],
+                  refresh_min=REFRESH_MIN, refresh_max=REFRESH_MAX, secondary_max=SECONDARY_MAX)
+
+
+def _minutes(raw: str) -> int | None:
+    raw = raw.strip()
+    return int(raw) if raw.isascii() and raw.isdigit() and int(raw) <= SECONDARY_MAX else None
+
+
+@router.post("/settings/preferences", dependencies=[Depends(verify_csrf)])
+def settings_preferences(request: Request, theme: str = Form("auto"), language: str = Form(""), minutes: str = Form("20"),
+                         user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Theme, language and the time after which secondary notices are read: one form, one Save."""
+    if theme not in THEMES:
+        raise HTTPException(400, "unknown theme")
+    if language and language not in i18n.LANGUAGES:
+        raise HTTPException(400, "unknown language")
+    mins = _minutes(minutes)
+    if mins is None:
+        flash(request, _("Enter 0 (never) or a number of minutes up to %(max)s", max=SECONDARY_MAX), "err")
+        return back("/me/settings")
+    user.theme, user.language, user.secondary_read_minutes = theme, language or None, mins
+    db.commit()
+    request.session["lang"] = language
+    i18n.set_language(language or i18n.negotiate(request.headers.get("accept-language")))  # this reply already speaks it
+    flash(request, _("Settings saved"))
+    return back("/me/settings")
 
 
 @router.post("/settings/theme", dependencies=[Depends(verify_csrf)])
@@ -207,18 +254,20 @@ def settings_notices(request: Request, minutes: str = Form("20"), user: User = D
 
 
 @router.post("/settings/refresh", dependencies=[Depends(verify_csrf)])
-def settings_refresh(request: Request, seconds: str = Form("30"), user: User = Depends(current_user),
-                     db: Session = Depends(get_db)):
-    """Seconds between automatic reloads of the audit page (administrators); 0 switches it off."""
+def settings_refresh(request: Request, seconds: str = Form("30"), next: str = Form("/me/settings"),
+                     user: User = Depends(current_user), db: Session = Depends(get_db)):
+    """Seconds between automatic reloads of the log page (administrators); 0 switches it off. `next`: where to go back to (the log
+    page has the choice beside its switch)."""
+    to = safe_next(next, "/me/settings")
     raw = seconds.strip()
     if not (raw.isascii() and raw.isdigit()) or not (int(raw) == 0 or REFRESH_MIN <= int(raw) <= REFRESH_MAX):
         flash(request, _("Enter 0 (off) or a number of seconds between %(min)s and %(max)s", min=REFRESH_MIN, max=REFRESH_MAX), "err")
-        return back("/me/settings")
+        return back(to)
     user.refresh_seconds = int(raw)
     db.commit()
     flash(request, _("Automatic refresh off") if user.refresh_seconds == 0
           else _("Automatic refresh every %(n)s seconds", n=user.refresh_seconds))
-    return back("/me/settings")
+    return back(to)
 
 
 @router.post("/password", dependencies=[Depends(verify_csrf)])
@@ -296,7 +345,8 @@ def group_submit(request: Request, group_id: int = Form(0), reason: str = Form("
 
 def _grant_lines(rows) -> list[dict]:
     """The permissions granted to this person, for the list on their page: what, and the last day (None = permanent)."""
-    return [{"what": permissions.describe_grant(g.perm, g.printer), "until": grants.last_day(g.valid_until, local_tz())} for g in rows]
+    return [{"what": permissions.describe_grant(g.perm, g.printer), "perm": g.perm, "printer": g.printer,
+             "until": grants.last_day(g.valid_until, local_tz())} for g in rows]
 
 
 @router.get("/request/permission", response_class=HTMLResponse)

@@ -44,4 +44,4 @@ Se dopo 3-4 minuti non è ancora pronta, salva le credenziali prima di aggiunger
 
 - **Chiave scaduta o revocata**: le stampe vengono rifiutate con un errore di accesso. Crea una chiave nuova (punto 1) e sostituisci quella salvata: *Gestione credenziali → Credenziali Windows*, apri la voce, cambia la password (da terminale: `cmdkey /list`, `cmdkey /delete:<voce>`).
 - **Stampante rinominata dall'amministratore**: la vecchia voce smette di funzionare; toglila e aggiungi quella nuova (punto 3).
-- **Stampa rifiutata**: la campanella (`/me/notices`) dice perché (quota, stampante od orario non consentiti…). Dal profilo puoi chiedere più quota o un permesso ([guida-utente.md](guida-utente.md)).
+- **Stampa rifiutata**: la campanella (`/me/notices`) dice perché (quota, stampante od orario non consentiti…). Da Account puoi chiedere più quota o un permesso ([guida-utente.md](guida-utente.md)).

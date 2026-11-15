@@ -234,12 +234,12 @@ async def test_page_shows_the_countdown_and_a_delete_button_for_unreachable_queu
     usb.state["down"] = {BRIDGE, "ipp://192.0.2.20:631/ipp/print"}
     await discovery.run_once(usb.app)
     page = (await usb.get("/admin/printers")).text
-    assert 'class="countdown"' in page and page.count('class="countdown"') == 1          # the USB queue only
+    assert page.count("If it does not come back, the queue is removed") == 1                 # the USB queue only
     assert "/admin/printers/hp/delete" in page and "/admin/printers/lan/delete" in page  # both can be deleted by hand
     usb.state["down"] = set()
     usb.app.state.printers_cache = None
     page = (await usb.get("/admin/printers")).text
-    assert "/admin/printers/hp/delete" not in page and 'class="countdown"' not in page
+    assert "/admin/printers/hp/delete" not in page and "the queue is removed" not in page
 
 
 async def test_manual_delete_only_of_queues_that_do_not_answer(usb):
@@ -331,8 +331,8 @@ async def test_ink_levels_come_from_the_printer_when_the_new_queue_has_none(usb,
         return {"ipp": {"ink": [{"name": "Black", "level": 71, "color": "#000000", "low": False}]}, "usage": [], "config": {}, "scanner": None}
     monkeypatch.setattr(printers_mod, "_device", device)
     page = (await usb.get("/admin/printers")).text
-    assert "Ink left" in page
-    assert "71%" in page
+    assert "Levels" in page
+    assert "71%" in page and 'width="71"' in page and 'fill="#000000"' in page                     # an SVG bar: no inline style
 
 
 def test_ink_is_read_from_marker_attributes():
@@ -379,7 +379,7 @@ async def test_cards_carry_the_wiring_badge(usb):
 
 
 def _order(page):
-    return re.findall(r'<b class="mono">([^<]+)</b>\s*\n', page)
+    return re.findall(r'<span class="mono prq-name">([^<]+)</span>', page)
 
 
 def _all_audits(usb):
@@ -396,8 +396,8 @@ async def test_printers_can_be_moved_up_and_down_within_their_group(usb):
     usb.fake.queues = [("a", "ipp://192.0.2.1/ipp/print"), ("b", "ipp://192.0.2.2/ipp/print"), ("c", "ipp://192.0.2.3/ipp/print"), ("v", "cups-pdf:/")]
     page = (await usb.get("/admin/printers")).text
     assert _order(page) == ["a", "b", "c", "v"]
-    assert re.search(r'/admin/printers/a/move.*?value="up".*?<button class="icon" disabled', page, re.S)       # the first can not go up
-    assert re.search(r'/admin/printers/v/move.*?value="down".*?<button class="icon" disabled', page, re.S)    # the last can not go down
+    assert re.search(r'/admin/printers/a/move.*?value="up"><button class="mi" disabled>', page, re.S)           # the first can not go up
+    assert re.search(r'/admin/printers/v/move.*?value="down"><button class="mi" disabled>', page, re.S)        # the last can not go down
     tok = await csrf_of_page(usb, "/admin/printers")
     await usb.post("/admin/printers/c/move", data={"csrf_token": tok, "direction": "up"})
     assert _order((await usb.get("/admin/printers")).text) == ["a", "c", "b", "v"]
@@ -516,3 +516,28 @@ async def test_move_refuses_bad_input(usb):
     tok = await csrf_of_page(usb, "/admin/printers")
     assert (await usb.post("/admin/printers/a/move", data={"csrf_token": tok, "direction": "sideways"})).status_code == 404
     assert (await usb.post("/admin/printers/nope/move", data={"csrf_token": tok, "direction": "up"})).status_code == 303
+
+
+@pytest.mark.parametrize("code", ["en", "it", "es", "ru", "zh"])
+async def test_the_printers_page_renders_in_every_language(usb, monkeypatch, code):
+    """Every part of the page at once (levels, counters, details, an unreachable queue, a virtual one): a text with a wrong
+    %(name)s would raise while rendering."""
+    import spoolsteward.admin.printers as printers_mod
+
+    async def device(base):
+        return {"ipp": {"ink": [{"name": "Black", "level": 8, "color": "#000000", "low": True}, {"name": "Cyan", "level": -1, "color": "#00ffff", "low": False}],
+                        "firmware": "1.2", "ppm": 10, "ppm_color": 5, "media": ["A4"], "alerts": ["door-open"]},
+                "usage": [("Pages printed (total)", 1234), ("Jams", 2), ("Single-sided sheets", 5)],
+                "config": {"serial": "S1", "sku": "X", "model": "HP Smart Tank"},
+                "scanner": {"state": "Idle", "adf": "Duplex", "dpi": [300, 600], "formats": ["application/pdf"]}}
+    monkeypatch.setattr(printers_mod, "_device", device)
+    usb.state["down"] = {"ipp://192.0.2.20:631/ipp/print"}                       # the second printer does not answer
+    usb.fake.queues.append(("debugprinter0", "cups-pdf:/"))
+    usb.app.state.printers_cache = usb.app.state.queues_cache = None
+    r = await usb.get("/admin/printers", headers={"Accept-Language": code})
+    assert r.status_code == 200 and f'<html lang="{code}"' in r.text
+    body = re.sub(r"<script.*?</script>", "", r.text, flags=re.S)
+    assert "%(" not in body and "Levels" in r.text or code != "en"
+    assert "hp" in body and "8%" in body and 'fill="#000000"' in body
+    # more than two printers: one row for each, that opens
+    assert "<details class=\"card pr-row-d\"" in body

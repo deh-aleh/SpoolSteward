@@ -82,6 +82,11 @@ async def register_submit(request: Request, username: str = Form(""), password: 
 
 # ------------------------------------------------------------------ administrators
 
+@router.get("/registration", response_class=HTMLResponse)
+def registration_page(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    return render(request, "registration.html", admin, reg=registration.state(db, datetime.now(UTC)))
+
+
 @router.post("/registration", dependencies=[Depends(verify_csrf)])
 def registration_set(request: Request, mode: str = Form("off"), hours: str = Form(""), accounts: str = Form(""),
                      admin: User = Depends(current_admin), db: Session = Depends(get_db)):
@@ -94,7 +99,7 @@ def registration_set(request: Request, mode: str = Form("off"), hours: str = For
         flash(request, _("Registration is now off") if mode == "off" else _("Registration is now open"))
     except registration.RegistrationError as exc:
         flash(request, str(exc), "err")
-    return back("/admin/users")
+    return back("/admin/registration")
 
 
 @router.post("/registrations/{reg_id}/approve", dependencies=[Depends(verify_csrf)])

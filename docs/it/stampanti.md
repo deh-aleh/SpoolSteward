@@ -6,7 +6,7 @@ La pagina **Stampanti** (`/admin/printers`, per gli amministratori) mostra ciò 
 
 ## 1. Cosa mostra la scheda di una stampante
 
-![La pagina Stampanti: stampanti di prova, la ricerca delle stampanti USB e la scheda di una multifunzione con livelli d'inchiostro, contatori della stampante e job contati dal gateway](../images/it/admin-printers.png)
+![La pagina Stampanti: la ricerca delle stampanti USB, la scheda di una multifunzione con i livelli, il contatore della stampante e le stampe contate dal gateway, e una stampante di prova](../images/it/admin-printers.png)
 
 - Stato e coda di ogni coda CUPS; un dispositivo che non risponde è **NON RAGGIUNGIBILE** (e sparisce dal modulo di stampa e dall'annuncio mDNS). Il rilevamento può ritardare ~30 s; per le code di rete è una prova TCP (non può sapere che la carta è finita); le code `usb:` / `file:` si assumono presenti.
 - Accanto a «n in coda», il pulsante **…** mostra l'indirizzo della coda (`ipps://<server>/printers/<nome>`) con un pulsante per copiarlo: quello da scrivere per aggiungere la stampante a mano.

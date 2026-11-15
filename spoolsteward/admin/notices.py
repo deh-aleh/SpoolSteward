@@ -4,11 +4,11 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from spoolsteward import notices
-from spoolsteward.admin.common import back, current_admin, flash, get_db, render, verify_csrf
+from spoolsteward.admin.common import _notices_unseen as _unseen, back, current_admin, flash, get_db, render, verify_csrf
 from spoolsteward.audit.adminlog import record
 from spoolsteward.db.models import Notice, User
 from spoolsteward.i18n import _, ngettext
@@ -25,18 +25,27 @@ def _every(seconds: int) -> str:
 
 
 @router.get("", response_class=HTMLResponse)
-def listing(request: Request, all: int = 0, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
-    q = select(Notice).where(Notice.user_id.is_(None)).order_by(Notice.last_at.desc())
+def listing(request: Request, all: int = 0, tab: str = "", admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+    """Two tabs, one bell: what concerns the administrator's own account ("own") and what the gateway noticed ("gateway")."""
+    if tab not in ("own", "gateway"):   # no tab asked: the one with something new (the gateway's, unless only the own ones are)
+        tab = "own" if _unseen(request, admin.id, own=True) and not _unseen(request, admin.id) else "gateway"
+    now = datetime.now(UTC)
+    unseen_own = db.scalar(select(func.count()).select_from(Notice).where(Notice.user_id == admin.id, Notice.dismissed_at.is_(None))) or 0
+    if tab == "own":
+        q = select(Notice).where(Notice.user_id == admin.id).order_by(Notice.last_at.desc())   # the administrator's own notices share the bell
+        admin.own_notices_seen_at = now   # opening the list is what "seeing" them means: the red dot goes away
+    else:
+        q = select(Notice).where(Notice.user_id.is_(None)).order_by(Notice.last_at.desc())
+        admin.notices_seen_at = now
     if not all:
         q = q.where(Notice.dismissed_at.is_(None))
-    own = select(Notice).where(Notice.user_id == admin.id).order_by(Notice.last_at.desc())   # the administrator's own notices share this page: one bell
-    if not all:
-        own = own.where(Notice.dismissed_at.is_(None))
-    own_rows = list(db.scalars(own.limit(200)))
-    admin.notices_seen_at = admin.own_notices_seen_at = datetime.now(UTC)   # opening the list is what "seeing" them means: the red dot goes away
     db.commit()
-    rows = [{"n": n, "extra": notices.pending(n.kind, n.key) if n.dismissed_at is None else 0} for n in db.scalars(q.limit(200))]
-    return render(request, "notices.html", admin, rows=rows, own_rows=own_rows, show_all=bool(all), when=_every(notices.interval()))
+    found = list(db.scalars(q.limit(200)))
+    if tab == "own":
+        return render(request, "notices.html", admin, tab="own", own_rows=found, rows=[], show_all=bool(all), when="",
+                      own_base="/admin/notices?tab=own", own_base_q="&", own_open=unseen_own)
+    rows = [{"n": n, "extra": notices.pending(n.kind, n.key) if n.dismissed_at is None else 0} for n in found]
+    return render(request, "notices.html", admin, tab="gateway", rows=rows, own_rows=[], show_all=bool(all), when=_every(notices.interval()))
 
 
 @router.post("/{nid}/dismiss", dependencies=[Depends(verify_csrf)])

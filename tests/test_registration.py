@@ -72,7 +72,8 @@ async def test_approval_mode_creates_a_disabled_account_that_an_administrator_de
     assert (await portal_login(reg, "maria", GOOD)).headers["location"] == "/login"     # still "invalid credentials"
     with reg.sm() as s:
         rid = s.scalars(select(Registration)).one().id
-    assert "Registrations waiting" in (await reg.get("/admin/requests")).text
+    waiting = (await reg.get("/admin/requests")).text
+    assert "maria" in waiting and f"/admin/registrations/{rid}/approve" in waiting and f"/admin/registrations/{rid}/reject" in waiting
     tok = await csrf_of_page(reg, "/admin/users")
     await reg.post(f"/admin/registrations/{rid}/approve", data={"csrf_token": tok})
     assert user_row(reg, "maria").enabled
@@ -178,7 +179,7 @@ async def test_the_address_is_limited_even_for_failed_attempts(reg, monkeypatch)
 async def test_nothing_to_offer_without_a_requestable_group(admin):
     r = await admin.post("/admin/registration", data={"csrf_token": await csrf_of_page(admin, "/admin/users"), "mode": "open"})
     assert r.status_code == 303
-    assert "No group can be requested" in (await admin.get("/admin/users")).text
+    assert "No group can be requested" in (await admin.get("/admin/registration")).text
     assert (await admin.get("/register")).status_code == 404
 
 
@@ -196,8 +197,8 @@ async def test_the_switch_is_one_for_all_administrators(reg):
     make_user(reg.sm, "boss2", password=GOOD, admin=True)
     reg.cookies.clear()
     await portal_login(reg, "boss2", GOOD)
-    page = (await reg.get("/admin/users")).text
-    assert "open, with approval" in page and "5 accounts still allowed" in page
+    page = (await reg.get("/admin/registration")).text
+    assert "Open, with approval" in page and "5 accounts still allowed" in page
     await reg.post("/admin/registration", data={"csrf_token": await csrf_of_page(reg, "/admin/users"), "mode": "off"})
     assert (await reg.get("/register")).status_code == 404
 

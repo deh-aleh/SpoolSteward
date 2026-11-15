@@ -1,27 +1,35 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Admin actions") }}{% endblock %}
-{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block title %}{{ _p("menu", "Log") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/jobs.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<div class="card">
-  <h1>{{ _("Administrative actions") }} <span class="muted">({{ total }})</span></h1>
-  <p class="muted">{{ _("Who did what in the portal. Read only: no row is ever deleted · 30 actions per page.") }} <a href="/admin/archive">{{ _p("menu", "Archive") }}</a></p>
-  <form method="get" class="row ac-form">
-    <input type="text" name="actor" placeholder="{{ _('Who (administrator)') }}" value="{{ f.actor }}" autocomplete="off" data-suggest='{{ actors|tojson }}'><input type="text" name="action" placeholder="{{ _('Action (e.g. user.update)') }}" value="{{ f.action }}" autocomplete="off" data-suggest='{{ action_names|tojson }}'><button>{{ _("Filter") }}</button>
-  </form>
-  <table class="roomy stack">
-    <tr><th>{{ _("When") }}</th><th>{{ _("Who") }}</th><th>{{ _("Action") }}</th><th>{{ _("Object") }}</th><th>{{ _("Details") }}</th></tr>
-    {% for a in rows %}
-    <tr><td class="nowrap mono">{{ a.ts|localtime }}</td><td>{{ a.actor_name }}</td><td class="mono">{{ a.action }}</td>
-      <td>{{ a.target_type or '' }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
-      <td class="muted mono ac-detail">{{ a.detail_json | tojson if a.detail_json else '' }}</td></tr>
-    {% else %}<tr><td colspan="5" class="muted">{{ _("No actions.") }}</td></tr>{% endfor %}
-  </table>
-  {% if pages > 1 %}
-  <div class="row ac-gap">
-    {% if page > 1 %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page-1 }}">← {{ _("Previous") }}</a>{% endif %}
-    <span class="muted">{{ _("Page %(page)s / %(pages)s", page=page, pages=pages) }}</span>
-    {% if page < pages %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page+1 }}">{{ _("Next") }} →</a>{% endif %}
-  </div>
-  {% endif %}
+{% set tabset = 'log' %}{% set tab = 'actions' %}
+<div class="phead"><h1>{{ _p("menu", "Log") }}</h1></div>
+{% include "_tabs.html" %}
+<form method="get" class="row jb-filter">
+  <input type="text" name="actor" placeholder="{{ _('Who (administrator)') }}" aria-label="{{ _t('Who (administrator)') }}" value="{{ f.actor }}" autocomplete="off" data-suggest='{{ actors|tojson }}'>
+  <input type="text" name="action" placeholder="{{ _('Action (e.g. user.update)') }}" aria-label="{{ _t('Action (e.g. user.update)') }}" value="{{ f.action }}" autocomplete="off" data-suggest='{{ action_names|tojson }}'>
+  <button>{{ _("Filter") }}</button>
+</form>
+{% set ns = namespace(day=none) %}
+{% for a in rows %}{% set day = a.ts|localtime('%Y-%m-%d') %}
+  {% if day != ns.day %}{% if ns.day is not none %}</ul>{% endif %}<h2 class="dayhead">{{ a.ts|day }}</h2><ul class="rows">{% set ns.day = day %}{% endif %}
+  <li class="jr"><details>
+    <summary class="jsum act">
+      <span class="jt">{{ a.ts|localtime('%H:%M') }}</span><span class="ju">{{ a.actor_name }}</span>
+      <span class="jf"><span class="jn mono">{{ a.action }}</span><span class="jl2">{{ a.target_type or '' }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</span></span>
+      {{ icon("chevron-down", "chev") }}
+    </summary>
+    <div class="detail"><dl class="kv"><dt>{{ _("When") }}</dt><dd>{{ a.ts|localtime }}</dd><dt>{{ _("Who") }}</dt><dd>{{ a.actor_name }}</dd>
+      <dt>{{ _("Action") }}</dt><dd class="mono">{{ a.action }}</dd><dt>{{ _("Object") }}</dt><dd>{{ a.target_type or '—' }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</dd>
+      {% if a.detail_json %}<dt>{{ _("Details") }}</dt><dd class="mono">{{ a.detail_json | tojson }}</dd>{% endif %}</dl></div>
+  </details></li>
+{% endfor %}
+{% if rows %}</ul>{% else %}<p class="muted">{{ _("No actions.") }}</p>{% endif %}
+{% if pages > 1 %}
+<div class="row jb-pager">
+  {% if page > 1 %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page-1 }}">{{ icon("arrow-left", "sm") }} {{ _("Previous") }}</a>{% endif %}
+  <span class="muted">{{ _("Page %(page)s of %(pages)s", page=page, pages=pages) }}</span>
+  {% if page < pages %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page+1 }}">{{ _("Next") }} {{ icon("arrow-right", "sm") }}</a>{% endif %}
 </div>
+{% endif %}
 {% endblock %}

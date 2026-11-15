@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "macros.html" import seg %}
+{% block title %}{{ _p("menu", "People") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/users.js?v={{ app_version }}" defer></script>{% endblock %}
+{% block body %}
+<a class="back" href="/admin/users">{{ icon("arrow-left", "sm") }}{{ _("Users") }}</a>
+<div class="phead"><h1>{{ _("New user") }}</h1></div>
+<form method="post" action="/admin/users/new" class="formpage" id="newuser">
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <div class="frows">
+    {% if radius_enabled %}<div class="frow"><div class="permhead">{{ _("Account") }}</div>
+      <div class="fctl">{{ seg("kind", [("local", _("Local")), ("radius", "RADIUS")], "local") }}</div></div>{% endif %}
+    <div class="frow"><label class="permhead" for="nu-name">{{ _("User") }}</label>
+      <div class="fctl"><input type="text" name="username" id="nu-name" required autocomplete="off"></div></div>
+    <div class="frow"><label class="permhead" for="nu-group">{{ _("Group") }}</label>
+      <div class="fctl"><select name="group_id" id="nu-group"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select></div></div>
+    <div class="frow" data-local><label class="permhead" for="pw-password">{{ _("Password") }}</label>
+      <div class="fctl">{% with name="password", autocomplete="new-password", optional=true, placeholder="" %}{% include "_pwfield.html" %}{% endwith %}
+        <span class="hint">{{ _("If left empty, a temporary password is generated and shown once.") }}</span></div></div>
+    <div class="frow" data-local><div class="permhead">{{ _("Admin") }}</div>
+      <div class="fctl"><label class="check"><input type="checkbox" name="is_admin" value="1"> {{ _("administrator") }}</label></div></div>
+  </div>
+  <div class="actions"><button>{{ _("Create") }}</button><a class="btn sec" href="/admin/users">{{ _("Cancel") }}</a></div>
+</form>
+{% endblock %}

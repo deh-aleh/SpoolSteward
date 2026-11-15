@@ -3,7 +3,10 @@ action happened on, and the specifications of a print."""
 
 from datetime import datetime
 
-from spoolsteward.db.models import JobKind, JobLog, JobState
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from spoolsteward.db.models import JobKind, JobLog, JobState, User
 from spoolsteward.i18n import N_, _
 
 FILE_MAX = 36     # characters of a file name / document name shown in the table
@@ -96,3 +99,9 @@ def archived_row(row: dict, scanner: str | None) -> dict:
                printer=row.get("printer"), cups_job_id=row.get("cups_job_id"), title=row.get("title"), pages=row.get("pages"),
                state=JobState(row["state"]), denied_reason=row.get("reason"), options_json=row.get("options"))
     return audit_row(j, row.get("user"), scanner)
+
+
+def recent_jobs(db: Session, user: User, scanner: str | None, limit: int) -> list[dict]:
+    """The latest prints and scans of one person, as rows (the account page lists them: a refused print says why)."""
+    rows = db.scalars(select(JobLog).where(JobLog.user_id == user.id).order_by(JobLog.id.desc()).limit(limit)).all()
+    return [audit_row(j, user.username, scanner) for j in rows]

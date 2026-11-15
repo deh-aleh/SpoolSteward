@@ -243,7 +243,7 @@ async def page(portal, tmp_path, monkeypatch):
     monkeypatch.setattr(service, "run_target", lambda sm, tid, prune: (True, "spoolsteward-x.tar.gz written"))
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    portal.csrf = await csrf_of_page(portal, "/admin/backups")
+    portal.csrf = await csrf_of_page(portal, "/admin/system")
 
     def offer(version, *, beta=False, breaking=False, major=False):
         portal.app.state.update_info = {"version": version, "beta": beta, "breaking": breaking, "major": major,
@@ -258,15 +258,15 @@ async def test_the_outcome_of_an_update_can_be_hidden_from_the_portal(page, tmp_
     d = tmp_path / "update"
     d.mkdir()
     (d / "status.json").write_text('{"state":"rolled_back","version":"1.1.0","backup":"x.tar.gz","ts":"2026-10-27T11:05:00Z"}')
-    text = (await page.get("/admin/backups")).text
+    text = (await page.get("/admin/system")).text
     assert "Last update to 1.1.0 failed" in text and 'action="/admin/update/dismiss"' in text
     assert (await page.post("/admin/update/dismiss", data={})).status_code == 403            # no CSRF token: nothing happens
     assert not (d / "dismissed.json").exists()
     await page.post("/admin/update/dismiss", data=dict(csrf_token=page.csrf))
-    text = (await page.get("/admin/backups")).text
+    text = (await page.get("/admin/system")).text
     assert "Last update to 1.1.0 failed" not in text and "/admin/update/dismiss" not in text
     (d / "status.json").write_text('{"state":"ok","version":"1.1.0","ts":"2026-10-27T13:00:00Z"}')   # the next outcome shows again
-    assert "Last update: 1.1.0 installed." in (await page.get("/admin/backups")).text
+    assert "Last update: 1.1.0 installed." in (await page.get("/admin/system")).text
 
 
 def update_form(text: str) -> dict:
@@ -277,9 +277,10 @@ def update_form(text: str) -> dict:
 
 async def test_a_final_release_asks_the_usual_question_and_needs_no_tick(page):
     page.offer("1.1.0")
-    text = (await page.get("/admin/backups")).text
+    text = (await page.get("/admin/system")).text
     form = update_form(text)
-    assert form == {"data-confirm": "Update now? A backup is made first. The gateway restarts and printing stops for a minute or two."}
+    assert form == {"data-confirm": "Update now? A backup is made first. The gateway restarts and printing stops for a minute or two.",
+                    "data-confirm-title": "Update to 1.1.0?"}
     assert "A new version is available: 1.1.0 (installed: " in text
     assert '<input type="hidden" name="version" value="1.1.0">' in text
     await page.post("/admin/update", data=dict(csrf_token=page.csrf, version="1.1.0-beta.1"))   # the offer changed meanwhile
@@ -290,7 +291,7 @@ async def test_a_final_release_asks_the_usual_question_and_needs_no_tick(page):
 
 async def test_a_beta_needs_the_tick_of_its_confirmation(page):
     page.offer("1.1.0-beta.1", beta=True)
-    text = (await page.get("/admin/backups")).text
+    text = (await page.get("/admin/system")).text
     form = update_form(text)
     assert form["data-confirm"] == ("1.1.0-beta.1 is a test release (pre-release): it can contain bugs.\n\n"
                                     "Update now? A backup is made first. The gateway restarts and printing stops for a minute or two.")
@@ -299,18 +300,18 @@ async def test_a_beta_needs_the_tick_of_its_confirmation(page):
     assert form["data-confirm-check-name"] == "accept" and "data-confirm-check-required" in form
     assert "data-confirm-danger" not in form
     assert "A new test release (pre-release) is available: 1.1.0-beta.1 (installed: " in text
-    assert "new test release 1.1.0-beta.1 available (pre-release)" in text
+    assert "Test release 1.1.0-beta.1 is available (pre-release)." in text
 
     r = await page.post("/admin/update", data=dict(csrf_token=page.csrf))     # without the tick: nothing happens
     assert r.status_code == 303 and not page.wanted.exists()
-    assert "tick the box" in (await page.get("/admin/backups")).text
+    assert "tick the box" in (await page.get("/admin/system")).text
     await page.post("/admin/update", data=dict(csrf_token=page.csrf, accept="1"))
     assert json.loads(page.wanted.read_text())["version"] == "1.1.0-beta.1"
 
 
 async def test_breaking_changes_get_the_strong_warning(page):
     page.offer("1.2.0", breaking=True)
-    text = (await page.get("/admin/backups")).text
+    text = (await page.get("/admin/system")).text
     form = update_form(text)
     assert form["data-confirm"] == (
         "The update to 1.2.0 contains breaking changes. The installation could fail and leave SpoolSteward not working.\n\n"
@@ -321,7 +322,8 @@ async def test_breaking_changes_get_the_strong_warning(page):
     assert form["data-confirm-check"] == "I have a backup, a copy of .env and of the config folder, and I have read the release notes"
     assert "data-confirm-check-required" in form
     assert "It contains breaking changes: read the release notes before updating." in text
-    assert '<a href="https://github.com/deh-aleh/SpoolSteward/releases/tag/v1.2.0" rel="noopener noreferrer" target="_blank">Read the release notes</a>' in text
+    assert '<a href="https://github.com/deh-aleh/SpoolSteward/releases/tag/v1.2.0" rel="noopener noreferrer" target="_blank">Release notes</a>' in text
+    assert "Contains breaking changes." in text
 
     await page.post("/admin/update", data=dict(csrf_token=page.csrf))
     assert not page.wanted.exists()
@@ -331,15 +333,15 @@ async def test_breaking_changes_get_the_strong_warning(page):
 
 async def test_a_beta_with_breaking_changes_says_both(page):
     page.offer("1.2.0-beta.1", beta=True, breaking=True)
-    form = update_form((await page.get("/admin/backups")).text)
+    form = update_form((await page.get("/admin/system")).text)
     assert form["data-confirm"].startswith("1.2.0-beta.1 is a test release (pre-release): it can contain bugs.\n\nThe update to 1.2.0-beta.1 contains breaking changes.")
     assert form["data-confirm-title"] == "Update with breaking changes" and "data-confirm-check-required" in form
 
 
 async def test_another_major_version_is_not_installed_from_the_portal(page):
     page.offer("2.0.0", breaking=True, major=True)
-    text = (await page.get("/admin/backups")).text
-    assert "<button disabled>" in text and 'action="/admin/update"' not in text
+    text = (await page.get("/admin/system")).text
+    assert 'action="/admin/update"' not in text
     assert "2.0.0 is a new major version: it is not installed from the portal." in text
     await page.post("/admin/update", data=dict(csrf_token=page.csrf, accept="1"))
     assert not page.wanted.exists()

@@ -28,7 +28,7 @@ from starlette.concurrency import run_in_threadpool
 
 import spoolsteward as app_package
 from spoolsteward import i18n
-from spoolsteward.admin.common import current_user, render
+from spoolsteward.admin.common import current_user, render, templates
 from spoolsteward.backup.core import app_version
 from spoolsteward.db.models import User
 
@@ -291,13 +291,35 @@ def build(lang: str, page: str | None, admin: bool = True) -> dict:
     text = path.read_text(encoding="utf-8", errors="replace")
     html, title = render_markdown(text, lang, names)
     twin = counterpart(text, lang, names)
-    return {"kind": "page", "doc_lang": lang, "other": other, "html": html, "title": title or page,
+    # the sections of the page for the index beside it: the second-level headings (markdown-it writes them as <h2 id="…">text</h2>)
+    toc = [(m.group(1), re.sub(r"<[^>]+>", "", m.group(2))) for m in re.finditer(r'<h2 id="([^"]+)">(.*?)</h2>', html)]
+    return {"kind": "page", "doc_lang": lang, "other": other, "html": html, "title": title or page, "toc": toc,
             "switch": f"/docs/{other}/" + (quote(twin) if twin else "")}
 
 
 async def _show(request: Request, user: User, lang: str, page: str | None):
     ctx = await run_in_threadpool(build, lang, page, user.is_admin)
     return render(request, "docs.html", user, status_code=404 if ctx["kind"] == "missing" else 200, **ctx)
+
+
+# The sections of the guide that pages of the portal send people to (a link goes to the section, not to the index):
+# key -> {language: (page, heading as written in the file)}
+SECTIONS = {
+    "states": {"en": ("audit", "1. Print and scan audit"), "it": ("audit", "1. Audit di stampe e scansioni")},
+    "usb": {"en": ("printers", "2. New and unplugged USB printers"), "it": ("stampanti", "2. Stampanti USB nuove e scollegate")},
+    "backup": {"en": ("backup", "1. Built-in backups (*System* page)"), "it": ("backup", "1. Backup integrati (pagina *Sistema*)")},
+    "scan": {"en": ("user-guide", "4. Scan (`/me/scan`)"), "it": ("guida-utente", "4. Scansione (`/me/scan`)")},
+}
+
+
+def doc_href(key: str) -> str:
+    """The address of a section of the guide, in the language of the page (Italian, otherwise English)."""
+    lang = "it" if i18n.current().startswith("it") else "en"
+    page, heading = SECTIONS[key][lang]
+    return f"/docs/{lang}/{page}#{slugify(heading)}"
+
+
+templates.env.globals["doc_href"] = doc_href
 
 
 @router.get("/docs")

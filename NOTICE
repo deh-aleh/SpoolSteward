@@ -4,3 +4,11 @@ Copyright 2026 Alessio Paccino
 This product includes software developed by Alessio Paccino.
 Redistributions, including commercial ones, must keep this notice
 (see the LICENSE file, Apache License 2.0, section 4).
+
+Third-party material served by the portal (spoolsteward/admin/):
+
+- Tabler Icons (https://tabler.io/icons), MIT License, Copyright (c) 2020-2024 Pawel Kuna.
+  The paths in spoolsteward/admin/icons.py come from it.
+- Sofia Sans Condensed (https://github.com/lettersoup/Sofia-Sans), SIL Open Font License 1.1,
+  Copyright 2019 The Sofia Sans Project Authors. The files are in spoolsteward/admin/static/fonts/;
+  the licence text is in spoolsteward/admin/static/fonts/OFL.txt.

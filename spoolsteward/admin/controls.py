@@ -23,7 +23,7 @@ QUEUE_RE = re.compile(r"^[A-Za-z0-9._@+-]{1,127}$")
 
 
 @router.post("/admin/maintenance", dependencies=[Depends(verify_csrf)])
-def maintenance(request: Request, on: str = Form("1"), next: str = Form("/admin/printers"), notify: str = Form(""),
+def maintenance(request: Request, on: str = Form("1"), next: str = Form("/admin/system#maintenance"), notify: str = Form(""),
                 admin: User = Depends(current_admin), db: Session = Depends(get_db)):
     """`notify`: the tick in the confirmation window: a notice in the bell of every active account (not the administrator
     who did it). Leaving maintenance also closes the "in maintenance" notices that are still open."""
@@ -39,7 +39,7 @@ def maintenance(request: Request, on: str = Form("1"), next: str = Form("/admin/
     log.warning("admin %s %s maintenance mode", admin.username, "ENABLED" if flag else "disabled")
     flash(request, _("Gateway in maintenance: printing and scanning stopped for users, printers hidden from the network (within ~30 s)")
           if flag else _("Maintenance over: the gateway is operational again"), "err" if flag else "ok")
-    return back(safe_next(next, "/admin/printers"))
+    return back(safe_next(next, "/admin/system#maintenance"))
 
 
 def _flag(request: Request, name: str, field: str, on: str, admin: User, db: Session, action_on: str, action_off: str,

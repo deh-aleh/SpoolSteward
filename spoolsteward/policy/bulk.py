@@ -65,9 +65,12 @@ def limit_views(db: Session, users: Sequence[User], now: datetime, tz: ZoneInfo,
             tip = ([_("limit inherited from the group")] if inherited else []) + [
                 f"+{g.amount} · " + (_("temporary, expires on %(date)s", date=localtime(g.valid_until, '%Y-%m-%d %H:%M')) if g.valid_until else _("permanent"))
                 for g in gl]
+            if r and r.period not in used:
+                used[r.period] = _usage(db, r.period, now, tz)
             view[m.value] = {
                 "limit": r.limit if r else None, "inherited": inherited,
                 "extra": sum(g.amount for g in gl), "period": r.period.value if r else None, "tip": "\n".join(tip),
+                "used": used[r.period].get(u.id, {}).get(m, 0) if r else 0,
             }
         for r in rules.values():  # the order effective_rules gives
             if r.period not in used:

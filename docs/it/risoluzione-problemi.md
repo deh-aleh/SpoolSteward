@@ -68,7 +68,7 @@ l'annunciatore non può provare chi è al gateway). Non si perde nulla: utenti, 
 
 | Sintomo | Causa e rimedio |
 |---|---|
-| Il client chiede sempre la password | La **password di dominio non vale per stampare**: serve una chiave di stampa da *Profilo* (`SPOOLSTEWARD_IPP_AUTH=keys`). Oppure la coppia (utente, IP) è bloccata. |
+| Il client chiede sempre la password | La **password di dominio non vale per stampare**: serve una chiave di stampa da *Dispositivi* (`SPOOLSTEWARD_IPP_AUTH=keys`). Oppure la coppia (utente, IP) è bloccata. |
 | `Forbidden` / HTML 426 da CUPS | La policy di CUPS non è quella del gateway: serve `docker/stack/cups/cupsd.conf` (`DefaultAuthType None`). |
 | 502 dal gateway | CUPS fermo o `SPOOLSTEWARD_CUPS_URL` errato. `docker compose logs cups`. |
 | Job rifiutato: «la stampa è consentita solo…», «la stampa a colori non è consentita…», «non può usare quella stampante» | I permessi del gruppo dell'utente o la sua regola ([quote.md](quote.md)). Il profilo dell'utente elenca cosa è consentito e permette di fare una richiesta. |

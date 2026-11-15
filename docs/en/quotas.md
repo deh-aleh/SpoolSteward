@@ -27,7 +27,7 @@ reconciler replaces the estimate with the **real pages** read from CUPS. For fil
 
 ## 2. Requests from users
 
-In *Profile* a user can ask for:
+In *Account* a user can ask for:
 
 1. **More quota** — metric, amount, **temporary** or **permanent**, and a reason. Only metrics that have a limit. The **period is the rule's**, shown read-only ("your pages limit is monthly: the exception lasts until 1 November").
 2. **Change of group** — only towards groups marked *requestable*.
@@ -56,7 +56,7 @@ the audit stores the English one.
 
 Quotas say *how much*; permissions say *what*, *where* and *when*. They are set with the **Advanced permissions** button at the bottom of the group page (*Groups* → edit) and of the user page (*Users* → edit); the block is closed when everything is at the default.
 
-![The edit page of a group: name, job and page limits, period, requestable, and the open Advanced permissions block with colour allowed and one-sided not allowed](../images/en/admin-group-edit.png)
+![The edit page of a group: name, job and page limits, period, requestable, and the Advanced permissions block](../images/en/admin-group-edit.png)
 
 | Permission | If it is not given |
 |---|---|
@@ -113,7 +113,7 @@ the profile page, where the user sees their permissions and can ask for the miss
 
 ### What the user sees
 
-- *Profile*: the box "Your permissions" with the link to ask for what is missing. Printer lists and ready-made addresses show only the printers the person may use.
+- *Account*: the section "What you can print" with the link to ask for what is missing. Printer lists and ready-made addresses show only the printers the person may use.
 - *Print*: only allowed printers; no colour choice without the colour permission; a double-sided choice on duplex printers only for those who may print one-sided; a banner with the allowed hours when outside them.
 - The bell: "refused", "quota reached" and "changed" notices (the "changed" one is *secondary*: read automatically after the time chosen in `/me/settings`, 20 minutes by default), and one when an administrator changes the person's own permissions.
 

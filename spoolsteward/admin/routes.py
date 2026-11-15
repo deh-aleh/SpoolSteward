@@ -188,7 +188,8 @@ async def jobs(request: Request, user: str = "", state: str = "", q: str = "", p
     return render(request, "jobs.html", admin, rows=[audit_row(j, name, scanner) for j, name in rows], total=total,
                   page=page, pages=max(1, -(-total // JOBS_PAGE)), f={"user": user, "state": state, "q": q},
                   states=[s.value for s in JobState], archives=archives if archives[0] else None,
-                  refresh=admin.refresh_seconds, titles_on=titles_on, title_scan=TITLE_SCAN)
+                  refresh=admin.refresh_seconds, titles_on=titles_on, title_scan=TITLE_SCAN,
+                  intervals=sorted({15, 30, 60} | ({admin.refresh_seconds} if admin.refresh_seconds else set())))
 
 
 def _csv_safe(v) -> str:
@@ -229,7 +230,7 @@ def job_titles(request: Request, on: str = Form("1"), admin: User = Depends(curr
     log.warning("admin %s %s saving the file names of new jobs", admin.username, "STARTED" if flag else "STOPPED")
     flash(request, _("From now on the names of new files are saved") if flag
           else _("From now on the names of new files are not saved"), "ok" if flag else "err")
-    return back("/admin/jobs")
+    return back("/admin/system#log")
 
 
 # ------------------------------------------------------------------ admin: cancel a queued job

@@ -96,12 +96,19 @@ async def test_an_administrator_has_one_bell_with_both_kinds_of_notices(boss):
     notices.notify_user(boss.sm, uid(boss, "boss"), "key_revoked", {"label": "old laptop", "prefix": "abc"})
     notices.report(boss.sm, "escl_anonymous_refused", "10.0.0.8")
     await portal_login(boss, "boss", GOOD)
+    def bell(html):    # the counter on the Notices entry of the menu
+        entry = re.search(r'<a class="navitem[^"]*" href="/admin/notices".*?</a>', html, re.S).group(0)
+        found = re.search(r'class="count"[^>]*>(\d+)<', entry)
+        return found.group(1) if found else None
+
     page = (await boss.get("/admin/jobs")).text
-    assert page.count('class="bell iconbtn') == 1 and 'class="belln">2<' in page
-    assert (await boss.get("/me/notices", follow_redirects=False)).headers["location"] == "/admin/notices"
-    both = (await boss.get("/admin/notices")).text
-    assert "old laptop" in both and "10.0.0.8" in both and "For you" in both
-    assert 'class="belln"' not in (await boss.get("/me")).text                 # opening the page counted as seeing both
+    assert page.count('href="/admin/notices"') == 1 and bell(page) == "2"
+    assert (await boss.get("/me/notices", follow_redirects=False)).headers["location"] == "/admin/notices?tab=own"
+    gateway = (await boss.get("/admin/notices")).text                              # no tab asked: the gateway's
+    assert "10.0.0.8" in gateway and "old laptop" not in gateway and "For you" in gateway
+    both = (await boss.get("/admin/notices?tab=own")).text
+    assert "old laptop" in both and "10.0.0.8" not in both
+    assert bell((await boss.get("/me")).text) is None                          # opening the two tabs counted as seeing both
     token = re.search(r'name="csrf_token" value="([^"]+)"', both).group(1)
     nid = mine(boss, "boss")[0].id
     assert (await boss.post(f"/me/notices/{nid}/dismiss", data={"csrf_token": token})).status_code == 303

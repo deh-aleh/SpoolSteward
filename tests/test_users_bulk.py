@@ -135,7 +135,9 @@ async def test_users_page(admin):
         views = {u.id: _limit_view(s, u, NOW) for u in users}
     for u in users:
         assert u.username in r.text
-    lines = {line for v in views.values() for line in v["usage"]}
-    assert lines and all(line.replace("&", "&amp;") in r.text for line in lines)
-    assert any(v["jobs"]["extra"] for v in views.values()) and "+7" in r.text and "+4" in r.text
+    for v in views.values():
+        for m in (v["jobs"], v["pages"]):
+            if m["limit"] is not None:
+                assert f"{m['used']} of {m['limit'] + m['extra']} per {'week' if m['period'] == 'weekly' else 'month'}" in r.text
+    assert any(v["jobs"]["extra"] for v in views.values()) and " + 7 granted" in r.text and " + 4 granted" in r.text
     assert "g1" in r.text and "limit inherited from the group" in r.text

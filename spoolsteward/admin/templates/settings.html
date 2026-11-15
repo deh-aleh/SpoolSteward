@@ -1,59 +1,51 @@
 {% extends "base.html" %}
-{% from "macros.html" import stepper %}
-{% block title %}{{ _("Settings") }}{% endblock %}
+{% from "macros.html" import seg, stepper %}
+{% block title %}{{ _p("menu", "Settings") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<div class="narrow">
-<div class="card">
-  <h1>{{ _("Settings") }}</h1>
-  <dl class="kv"><dt>{{ _("User") }}</dt><dd><b>{{ me.username }}</b></dd><dt>{{ _("Sign-in") }}</dt><dd>{{ _("local account") if me.provider == 'local' else _("RADIUS (%(provider)s)", provider=me.provider) }}</dd></dl>
+<div class="phead"><h1>{{ _p("menu", "Settings") }}</h1></div>
+<p class="pinfo">{{ me.username }}, {{ _("local account") if me.provider == 'local' else _("RADIUS (%(provider)s)", provider=me.provider) }}</p>
+<div class="cols">
+<div class="col-main">
+<section class="blk">
+  <h2>{{ _("Preferences") }}</h2>
+  <form method="post" action="/me/settings/preferences" class="formpage">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="frows">
+      <div class="frow"><div class="permhead">{{ _("Theme") }}</div>
+        <div class="fctl">{{ seg("theme", themes_view, me.theme or 'auto', "compact") }}</div></div>
+      <div class="frow"><label class="permhead" for="pref-lang">{{ _("Language") }}</label>
+        <div class="fctl"><select name="language" id="pref-lang">
+          <option value="" {{ 'selected' if not me.language }}>{{ _("Automatic (as the browser)") }}</option>
+          {% for code, name in languages.items() %}<option value="{{ code }}" lang="{{ code }}" {{ 'selected' if me.language == code }}>{{ name }}</option>{% endfor %}
+        </select></div></div>
+      <div class="frow"><div class="permhead">{{ _("Notices about changed prints") }}</div>
+        <div class="fctl"><span class="row"><span>{{ _("Mark as read after") }}</span>{{ stepper("minutes", me.secondary_read_minutes, min=0, max=secondary_max, label=_("Minutes"), required=true) }}<span>{{ _("minutes") }}</span></span>
+          <span class="hint">{{ _("With 0 they stay until you dismiss them.") }}</span></div></div>
+    </div>
+    <div class="actions"><button>{{ _("Save") }}</button></div>
+  </form>
+</section>
 </div>
-<form class="card" method="post" action="/me/settings/theme">
-  <h2>{{ _("Appearance") }}</h2>
-  <div class="row">
-    <select name="theme" aria-label="{{ _('Theme') }}">{% for k, label in themes.items() %}<option value="{{ k }}" {{ 'selected' if me.theme == k }}>{{ _(label) }}</option>{% endfor %}</select>
-    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
-  </div>
-</form>
-<form class="card" method="post" action="/me/settings/language">
-  <h2>{{ _("Language") }}</h2>
-  <div class="row">
-    <select name="language" aria-label="{{ _('Language') }}">
-      <option value="" {{ 'selected' if not me.language }}>{{ _("Automatic (as the browser)") }}</option>
-      {% for code, name in languages.items() %}<option value="{{ code }}" lang="{{ code }}" {{ 'selected' if me.language == code }}>{{ name }}</option>{% endfor %}
-    </select>
-    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
-  </div>
-</form>
-<form class="card" method="post" action="/me/settings/notices">
-  <h2>{{ _("Secondary notices") }}</h2>
-  <p class="muted">{{ _("Notices about a single print that was changed for you (for example made in black and white or double-sided because your account has no permission) are marked as read by themselves after this many minutes, counted from the last one. They stay in the list under “Show dismissed too”. With 0 they stay until you dismiss them.") }}</p>
-  <div class="row">
-    {{ stepper("minutes", me.secondary_read_minutes, min=0, max=secondary_max, label=_("Minutes"), required=true) }} {{ _("minutes") }}
-    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
-  </div>
-</form>
-{% if me.is_admin %}
-<form class="card" method="post" action="/me/settings/refresh">
-  <h2>{{ _("Audit: automatic refresh") }}</h2>
-  <p class="muted">{{ _("How many seconds between the automatic reloads of the Audit page while its switch is on (it does not reload while you type in the filters or have a popup open). With 0 the switch starts off, and uses 30 seconds when you turn it on.") }}</p>
-  <div class="row">
-    {{ stepper("seconds", me.refresh_seconds, min=0, max=refresh_max, label=_("Seconds"), required=true) }} {{ _("seconds") }}
-    <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Save") }}</button>
-  </div>
-</form>
-{% endif %}
+<div class="col-side">
 {% if me.provider == 'local' %}
-<form class="card pwform" method="post" action="/me/password">
+<section class="blk">
   <h2>{{ _("Change password") }}</h2>
-  <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  {% with name="current", placeholder=_t('current password'), autocomplete="current-password" %}{% include "_pwfield.html" %}{% endwith %}
-  {% with name="new", placeholder=_t('new password (min. %(n)s)', n=password_min_length), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
-  {% with name="confirm", placeholder=_t('repeat the new one'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
-  <p><button class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4"/><path d="M10.5 12.5 20 3M16.5 6.5l3 3M13.5 9.5l2 2"/></svg>{{ _("Change password") }}</button></p>
-  <p class="muted">{{ _("Other sessions open with this account will be closed. Print keys stay valid.") }}</p>
-</form>
+  <form method="post" action="/me/password" class="pwform formpage">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="frows">
+      <div class="frow"><label class="permhead" for="pw-current">{{ _("Current password") }}</label><div class="fctl">{% with name="current", autocomplete="current-password", placeholder="" %}{% include "_pwfield.html" %}{% endwith %}</div></div>
+      <div class="frow"><label class="permhead" for="pw-new">{{ _("New password") }}</label><div class="fctl">{% with name="new", autocomplete="new-password", placeholder="" %}{% include "_pwfield.html" %}{% endwith %}
+        <span class="hint">{{ _("At least %(n)s characters", n=password_min_length) }}</span></div></div>
+      <div class="frow"><label class="permhead" for="pw-confirm">{{ _("Repeat the new password") }}</label><div class="fctl">{% with name="confirm", autocomplete="new-password", placeholder="" %}{% include "_pwfield.html" %}{% endwith %}</div></div>
+    </div>
+    <p class="note">{{ _("Other sessions open with this account will be closed. Print keys stay valid.") }}</p>
+    <div class="actions"><button>{{ _("Change password") }}</button></div>
+  </form>
+</section>
 {% else %}
-<div class="card"><h2>{{ _("Password") }}</h2><p class="muted">{{ _("Your password is managed by the RADIUS server: it cannot be changed here.") }}</p></div>
+<section class="blk"><h2>{{ _("Password") }}</h2><p class="muted">{{ _("Your password is managed by the RADIUS server: it cannot be changed here.") }}</p></section>
 {% endif %}
+</div>
 </div>
 {% endblock %}

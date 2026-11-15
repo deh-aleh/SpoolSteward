@@ -1,11 +1,22 @@
-// phone menu (base.html): the button only works once scripts run; without them the menu stays fully visible
+document.documentElement.classList.add('js');  // the stylesheet may count on scripts (the sheet of the print page shows the file name)
+// buttons that open a dialog of the page: data-open-dialog="id of the <dialog>"
+document.addEventListener('click', function (e) {
+  var o = e.target.closest && e.target.closest('[data-open-dialog]');
+  if (o) { var d = document.getElementById(o.dataset.openDialog); if (d && d.showModal) d.showModal(); }
+});
+
+// the ⋯ menus (<details class="menu">) close when something else is clicked and on Escape
 (function () {
-  var h = document.querySelector('header'), b = h && h.querySelector('.navtoggle');
-  if (!b) return;
-  h.classList.add('navjs');
-  function set(open) { h.classList.toggle('open', open); b.setAttribute('aria-expanded', open ? 'true' : 'false'); }
-  b.addEventListener('click', function () { set(!h.classList.contains('open')); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && h.classList.contains('open')) { set(false); b.focus(); } });
+  function closeAll(except) { document.querySelectorAll('details.menu[open]').forEach(function (d) { if (d !== except) d.open = false; }); }
+  document.addEventListener('click', function (e) {  // a click on an entry closes its menu too
+    var m = e.target.closest && e.target.closest('details.menu');
+    closeAll(m && !e.target.closest('.mi') ? m : null);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var d = document.querySelector('details.menu[open]');
+    if (d) { d.open = false; d.querySelector('summary').focus(); }
+  });
 })();
 
 // stacked tables on phones: give every cell the name of its column (the header row is hidden there)
@@ -187,10 +198,20 @@ document.querySelectorAll('.ar[data-ar-key]').forEach(function (box) {
   function paint() { btn.classList.toggle('on', on); btn.setAttribute('aria-checked', on ? 'true' : 'false'); }
   function tick() {
     var a = document.activeElement && document.activeElement.tagName;
-    if (document.querySelector('dialog[open]') || /^(INPUT|SELECT|TEXTAREA)$/.test(a || '')) { timer = setTimeout(tick, 5000); return; }
+    // not while a window or a row is open, or while something is being typed
+    if (document.querySelector('dialog[open], ul.rows details[open], details.menu[open]') || /^(INPUT|SELECT|TEXTAREA)$/.test(a || '')) { timer = setTimeout(tick, 5000); return; }
     location.reload();
   }
   function arm() { clearTimeout(timer); if (on) timer = setTimeout(tick, secs * 1000); }
   btn.addEventListener('click', function () { on = !on; put(on); paint(); arm(); });
   paint(); arm();
 });
+
+// <details data-keep="key">: open or closed as the person left it, also after the page reloads (every action of a form reloads it)
+(function () {
+  function get(k) { try { return sessionStorage.getItem('keep:' + k); } catch (e) { return null; } }
+  document.querySelectorAll('details[data-keep]').forEach(function (d) {
+    var v = get(d.dataset.keep); if (v !== null) d.open = v === '1';
+    d.addEventListener('toggle', function () { try { sessionStorage.setItem('keep:' + d.dataset.keep, d.open ? '1' : '0'); } catch (e) {} });
+  });
+})();

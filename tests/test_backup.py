@@ -210,10 +210,10 @@ async def test_a_restore_that_cannot_work_leaves_the_current_database_alone(port
 async def test_the_passphrase_boxes_have_a_show_button_and_are_never_kept(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    page = (await portal.get("/admin/backups")).text
+    page = (await portal.get("/admin/system")).text
     assert page.count('class="pwtoggle"') == 2
     for name in ("passphrase", "passphrase2"):   # data-keep must not save it even while it is shown as text
-        box = re.search(rf'<input type="password" name="{name}"[^>]*>', page).group(0)
+        box = re.search(rf'<input type="password" id="pw-{name}" name="{name}"[^>]*>', page).group(0)
         assert "data-nokeep" in box and "required" not in box
 
 
@@ -222,16 +222,16 @@ async def test_admins_have_their_own_backups(portal, dirs):
     make_user(portal.sm, "eli", password=GOOD, admin=True)
     make_user(portal.sm, "pia", password=GOOD)
     await portal_login(portal, "ada", GOOD)
-    csrf = await csrf_of_page(portal, "/admin/backups")
-    page = await portal.get("/admin/backups")
-    assert "No backup configured" in page.text and 'value="passphrase" checked' in page.text
+    csrf = await csrf_of_page(portal, "/admin/system")
+    page = await portal.get("/admin/system")
+    assert "No backup." in page.text and 'value="passphrase" checked' in page.text
 
     bad = await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="../etc", mode="none"))
     assert bad.status_code == 303
-    assert "Folder name not valid" in (await portal.get("/admin/backups")).text
+    assert "Folder name not valid" in (await portal.get("/admin/system")).text
     await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="ada", mode="passphrase",
                                                             passphrase=PASS, passphrase2="different one!!"))
-    assert "passphrases differ" in (await portal.get("/admin/backups")).text
+    assert "passphrases differ" in (await portal.get("/admin/system")).text
     with portal.sm() as s:
         assert s.scalars(select(BackupTarget)).first() is None
 
@@ -249,7 +249,7 @@ async def test_admins_have_their_own_backups(portal, dirs):
 
     run = await portal.post(f"/admin/backups/{tid}/run", data=dict(csrf_token=csrf))
     assert run.status_code == 303
-    assert "Backup done" in (await portal.get("/admin/backups")).text
+    assert "Backup done" in (await portal.get("/admin/system")).text
     files = [p for p in (dirs / "nas" / "ada").iterdir() if p.name.endswith(".tar.gz.enc")]
     assert len(files) == 1 and "-t%d-" % tid in files[0].name
     assert list((dirs / "nas" / "ada").glob("audit-archive-*/*.enc"))
@@ -257,8 +257,8 @@ async def test_admins_have_their_own_backups(portal, dirs):
     # another administrator sees it, runs it, but cannot change it
     await portal.post("/logout", data=dict(csrf_token=csrf))
     await portal_login(portal, "eli", GOOD)
-    csrf2 = await csrf_of_page(portal, "/admin/backups")
-    text = (await portal.get("/admin/backups")).text
+    csrf2 = await csrf_of_page(portal, "/admin/system")
+    text = (await portal.get("/admin/system")).text
     assert "NAS ada" in text and "belongs to ada" in text
     assert (await portal.get(f"/admin/backups/{tid}/edit")).status_code == 403
     assert (await portal.post(f"/admin/backups/{tid}/delete", data=dict(csrf_token=csrf2))).status_code == 403
@@ -273,13 +273,13 @@ async def test_admins_have_their_own_backups(portal, dirs):
     # a plain user has no access at all
     await portal.post("/logout", data=dict(csrf_token=csrf2))
     await portal_login(portal, "pia", GOOD)
-    assert (await portal.get("/admin/backups")).status_code == 403
+    assert (await portal.get("/admin/system")).status_code == 403
 
 
 async def test_owner_can_edit_toggle_and_delete(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    csrf = await csrf_of_page(portal, "/admin/backups")
+    csrf = await csrf_of_page(portal, "/admin/system")
     await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="one", folder="one", mode="none"))
     with portal.sm() as s:
         tid = s.scalars(select(BackupTarget)).one().id
@@ -340,7 +340,7 @@ async def test_unmounted_destination_raises_a_notice_with_the_real_name_and_it_c
 async def test_a_new_backup_is_created_with_the_marker_ticked(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    page = (await portal.get("/admin/backups")).text
+    page = (await portal.get("/admin/system")).text
     assert 'name="require_marker" value="1" checked' in page
 
 
@@ -392,8 +392,8 @@ async def test_general_backup_follows_gateway_env(portal, dirs, monkeypatch):
     # the portal shows it as read-only
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    text = (await portal.get("/admin/backups")).text
-    assert "edited in .env" in text
+    text = (await portal.get("/admin/system")).text
+    assert "Set in .env" in text
     assert (await portal.get(f"/admin/backups/{g.id}/edit")).status_code == 403
 
 
@@ -439,12 +439,12 @@ async def test_update_button_needs_updater_and_a_working_scheduled_backup(portal
     monkeypatch.setattr(updates, "app_version", lambda: "1.0.0")
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    csrf = await csrf_of_page(portal, "/admin/backups")
+    csrf = await csrf_of_page(portal, "/admin/system")
     portal.app.state.update_info = {"version": "1.1.0", "url": ""}
 
     # no updater container and no backup: the button is off
-    page = (await portal.get("/admin/backups")).text
-    assert "<button disabled>" in page
+    page = (await portal.get("/admin/system")).text
+    assert 'action="/admin/update"' not in page and "Updating from the portal is off" in page      # no button: the reason instead
     assert (await portal.post("/admin/update", data=dict(csrf_token=csrf))).status_code == 303
     assert not (udir / "request.json").exists()
 
@@ -454,12 +454,12 @@ async def test_update_button_needs_updater_and_a_working_scheduled_backup(portal
         t = s.scalars(select(BackupTarget)).one()
         t.last_ok_at, t.last_status = datetime.now(UTC), "ok"
         s.commit()
-    assert not (udir / "request.json").exists() and "<button disabled>" in (await portal.get("/admin/backups")).text
+    assert not (udir / "request.json").exists() and 'action="/admin/update"' not in (await portal.get("/admin/system")).text
 
     # updater alive: the button works, a fresh backup is taken and the request holds only the version
     (udir / "heartbeat").write_text("")
-    page = (await portal.get("/admin/backups")).text
-    assert "<button disabled>" not in page and 'action="/admin/update"' in page
+    page = (await portal.get("/admin/system")).text
+    assert 'action="/admin/update"' in page
     await portal.post("/admin/update", data=dict(csrf_token=csrf))
     req = json.loads((udir / "request.json").read_text())
     assert req["version"] == "1.1.0" and req["by"] == "ada" and req["backup"].endswith(".tar.gz")
@@ -586,7 +586,7 @@ async def test_the_backup_page_and_the_failure_notices_show_the_translated_name(
     _general(portal, monkeypatch)
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
-    assert "General (.env)" in (await portal.get("/admin/backups")).text
+    assert "General (.env)" in (await portal.get("/admin/system")).text
     assert common.templates.env.globals["backup_name"]("General (.env)") == "General (.env)"
     notices.report(portal.sm, "backup_failed", "9101", {"name": service.GLOBAL_NAME, "error": "disk full", "last_ok": None})
     page = (await portal.get("/admin/notices")).text

@@ -580,7 +580,7 @@ async def scan_once(app, user: User, scanner: Scanner, source: str, color: str, 
     if not decision.allowed:
         if decision.reason in (control.BLOCKED_REASON, control.MAINTENANCE_REASON):
             raise RuntimeError(decision.text())
-        raise RuntimeError(_("%(reason)s. You can ask for more quota from your profile.", reason=decision.text()))
+        raise RuntimeError(_("%(reason)s. You can ask for more quota from Account.", reason=decision.text()))
     area = (caps[source].get("w", A4[0]), caps[source].get("h", A4[1]))  # the whole sheet the scanner can read
     xml = SETTINGS_XML.format(source=SOURCES[source], color=COLORS[color], dpi=dpi, fmt=FORMATS[fmt], w=area[0], h=area[1])
     pages = await _run_scan_job(scan, scanner, source, xml, sm, log_id)
@@ -702,7 +702,10 @@ async def _run_scan(app, rec: dict, user: User, scanner: Scanner, source: str, c
 
 def _view(sid: str, rec: dict) -> dict:
     label = _SCAN_LABELS.get(rec["state"], rec["state"])
-    return {"id": sid, "state": rec["state"], "label": _(label), "error": rec.get("error"),
+    left = None   # whole minutes the file is still kept for (round up: "1 minute left" until it is gone)
+    if rec["state"] != "running":
+        left = max(0, -(-int(settings.scan_keep_minutes * 60 - (time.monotonic() - rec["ts"])) // 60))
+    return {"id": sid, "state": rec["state"], "label": _(label), "error": rec.get("error"), "left": left,
             "pages": rec.get("pages"), "name": f'{rec["name"]}.{rec["ext"]}' if rec.get("ext") else rec["name"]}
 
 
@@ -715,6 +718,8 @@ async def scan_form(request: Request, user: User = Depends(current_user)):
                   default_name=_default_scan_name(), mine=mine,
                   window_on=settings.escl_window and bool(found), window_seconds=settings.escl_window_seconds,
                   window_left=_windows(request.app).remaining(user.id), window_doc=_window_doc_href(),
+                  window_minutes=max(1, -(-settings.escl_window_seconds // 60)),
+                  window_ip=normalize_ip(request.client.host if request.client else None) or "",
                   keep_minutes=settings.scan_keep_minutes)
 
 

@@ -7,14 +7,6 @@ var T_FORMER = PR.t_former;
 var T_TAKEN = PR.t_taken;
 var T_SAME = PR.t_same;
 var T_BAD = PR.t_bad;
-// ink bars: the level and the colour come as data attributes (no inline style)
-document.querySelectorAll('.bar > i[data-w]').forEach(function (i) {
-  i.style.width = i.dataset.w + '%'; i.style.background = i.dataset.bg;
-});
-document.addEventListener('click', function (e) {  // buttons that open a dialog of their card
-  var o = e.target.closest && e.target.closest('[data-open-dialog]');
-  if (o) document.getElementById(o.dataset.openDialog).showModal();
-});
 (function () {
   var els = document.querySelectorAll('.countdown');
   if (!els.length) return;

@@ -43,7 +43,7 @@ spoolsteward-admin = "spoolsteward.cli:main"
 include = ["spoolsteward*"]
 
 [tool.setuptools.package-data]
-spoolsteward = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
+spoolsteward = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "admin/static/fonts/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

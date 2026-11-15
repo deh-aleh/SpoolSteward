@@ -506,7 +506,7 @@ def _test_page(card: dict, queue_name: str, color: bool) -> bytes:
     ipp, cfg, first = dev.get("ipp") or {}, dev.get("config") or {}, card["queues"][0]
     when = lambda t: t.replace(tzinfo=t.tzinfo or UTC).astimezone(local_tz()).strftime("%Y-%m-%d %H:%M") if t else "—"  # noqa: E731
     now = datetime.now(local_tz())
-    state = [(q["name"], (_dyn(q["state"]) if q.get("online") else _("NOT REACHABLE")) + ", " + _("%(n)s in queue", n=q["queued"])
+    state = [(q["name"], (_dyn(q["state"]) if q.get("online") else _("Not answering")) + ", " + _("%(n)s in queue", n=q["queued"])
               + ("" if q["accepting"] else ", " + _("not accepting jobs"))) for q in card["queues"]]
     gw = [(name, _("%(jobs)s jobs, %(pages)s pages, last %(when)s", jobs=s["jobs"], pages=s["pages"], when=when(s["last"])))
           for name, s in card["stats"].items()]

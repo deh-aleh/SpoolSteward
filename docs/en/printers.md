@@ -6,9 +6,9 @@ The **Printers** page (`/admin/printers`, administrators) shows what each printe
 
 ## 1. What a printer card shows
 
-![The Printers page: test printers, the search for USB printers and the card of a multifunction printer with ink levels, the printer's own counters and the jobs counted by the gateway](../images/en/admin-printers.png)
+![The Printers page: the search for USB printers, the card of a multifunction printer with its levels, the printer's own counter and the prints counted by the gateway, and a test printer](../images/en/admin-printers.png)
 
-- State and queue of every CUPS queue; a device that does not answer is **NOT REACHABLE** (and disappears from the print form and from the mDNS announcement). Detection can lag ~30 s; for network queues it is a TCP probe (it can not know that paper ran out); `usb:` / `file:` queues are assumed present.
+- State and queue of every CUPS queue; a device that does not answer shows **Not answering since…** (and disappears from the print form and from the mDNS announcement). Detection can lag ~30 s; for network queues it is a TCP probe (it can not know that paper ran out); `usb:` / `file:` queues are assumed present.
 - Beside "n in queue", the **…** button shows the queue address (`ipps://<server>/printers/<name>`) with a copy button: the one to type when adding the printer by hand.
 - **Ink** levels and colours (from CUPS).
 - **Printer counters** (lifetime: total pages, black and white, colour, sheets, jams, pick failures) from HP's embedded web service; other brands show only IPP data.
@@ -32,7 +32,7 @@ Nothing is tied to a printer model; texts from the device (ink names, firmware, 
 The queue is named after the model, shortened (at most 24 characters): noise such as "series", "printer", "MFP" and a bracketed part number is dropped, "Hewlett-Packard" becomes "HP" (`HP Smart Tank 7300 series [A7E76E]` becomes `HP_Smart_Tank_7300`, `Brother DCP-7055` becomes `Brother_DCP-7055`).
 The model is what the printer declares. Each USB printer shows a badge: **IPP-USB** or **USB** (driven by CUPS directly). The **Look now** button runs a pass at once. `SPOOLSTEWARD_AUTO_DISCOVER=false` turns it all off; `SPOOLSTEWARD_USB_DIRECT=false` skips way 2.
 
-**Unplugged printers.** A queue outlives the cable, so the card shows **NOT REACHABLE** and:
+**Unplugged printers.** A queue outlives the cable, so the card shows **Not answering since…** and:
 
 - a **Delete queue** button (any printer that does not answer, USB or network; it asks for confirmation). Block, maintenance-print settings and list position of the queue are forgotten;
 - for **USB queues**, a **countdown** ("will be removed automatically in 7:41:23 unless the printer comes back"). At zero the gateway deletes the queue and writes `printer.auto_remove` in the administrators' audit (actor `system`; new devices are `printer.auto_add`). The wait is

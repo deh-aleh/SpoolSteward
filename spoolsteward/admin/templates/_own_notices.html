@@ -1,14 +1,13 @@
   {% if own_rows %}
-  <table class="stack">
-    <tr><th>{{ _("When") }}</th><th>{{ _("What happened") }}</th><th></th></tr>
+  <ul class="rows nlist">
     {% for n in own_rows %}{% set d = n.detail_json or {} %}
-    <tr {% if n.dismissed_at %}class="muted"{% endif %}>
-      <td data-l="{{ _('When') }}">{{ n.last_at|localtime }}</td>
-      <td data-l="{{ _('What happened') }}">
+    <li class="nrow{{ ' done' if n.dismissed_at }}">
+      <span class="ntime">{{ n.last_at|neartime }}</span>
+      <span class="ntext">
         {% if n.kind == 'key_revoked' %}
-        {{ _("An administrator revoked your print key “%(label)s” (starts with %(prefix)s). It no longer works: create another one in your profile if you need it.", label=d.get("label", "?"), prefix=d.get("prefix", "?")) }}
+        {{ _("An administrator revoked your print key “%(label)s” (starts with %(prefix)s). It no longer works: create another one in <a href=\"/me/keys\">Devices</a> if you need it.", label=d.get("label", "?"), prefix=d.get("prefix", "?")) }}
         {% elif n.kind == 'key_revoked_many' %}
-        {{ _("An administrator revoked ALL your print keys (%(n)s). They no longer work: create new ones in your profile if you need them.", n=d.get("count", "?")) }}
+        {{ _("An administrator revoked all your print keys (%(n)s). They no longer work: create new ones in <a href=\"/me/keys\">Devices</a> if you need them.", n=d.get("count", "?")) }}
         {% elif n.kind == 'key_disabled' %}
         {{ _("An administrator switched off your print key “%(label)s” (starts with %(prefix)s). It does not work for now, and its expiry date does not change.", label=d.get("label", "?"), prefix=d.get("prefix", "?")) }}
         {% elif n.kind == 'key_enabled' %}
@@ -20,7 +19,7 @@
         {% elif n.kind == 'group_changed' %}
         {{ _("An administrator moved you from the group “%(old)s” to the group “%(new)s”. Your limits are now those of the new group.", old=d.get("old") or "—", new=d.get("new") or "—") }}
         {% elif n.kind == 'admin_on' %}
-        {{ _("An administrator made you an administrator. You can now manage users, groups and printers: the menu at the top has the new pages.") }}
+        {{ _("An administrator made you an administrator. You can now manage users, groups and printers: the menu has the new pages.") }}
         {% elif n.kind == 'admin_off' %}
         {{ _("An administrator removed your administrator rights. You are now in the group “%(group)s”.", group=d.get("group") or "—") }}
         {% elif n.kind == 'grant_given' and d.get("what") == 'permission' %}
@@ -28,7 +27,7 @@
         {% elif n.kind == 'grant_revoked' and d.get("what") == 'permission' %}
         {{ _("An administrator withdrew the permission you had been given: %(what)s.", what=perm_text(d.get("perm", ""), d.get("printer"))) }}
         {% elif n.kind == 'permission_expired' %}
-        {{ _("The permission you had been given has ended: %(what)s. You can ask for it again from your profile.", what=perm_text(d.get("perm", ""), d.get("printer"))) }}
+        {{ _("The permission you had been given has ended: %(what)s. You can ask for it again from <a href=\"/me\">Account</a>.", what=perm_text(d.get("perm", ""), d.get("printer"))) }}
         {% elif n.kind == 'grant_given' %}
         {{ _("An administrator gave you extra quota: %(amount)s %(metric)s, %(scope)s.", amount=d.get("amount", "?"), metric=_(d.get("metric", "")), scope=_(d.get("scope", ""))) }}{% if d.get("note") %} {{ _("Note: %(note)s", note=d.note) }}{% endif %}
         {% elif n.kind == 'grant_revoked' %}
@@ -46,17 +45,17 @@
         {% elif p == 'ink' %}{{ _("The printer “%(printer)s” is out of ink or toner, and your print may not come out right or may stop. Tell whoever looks after the printer.", printer=who) }}
         {% else %}{{ _("The printer “%(printer)s” reports a problem, and your print is waiting.", printer=who) }}{% endif %}
         {% elif n.kind == 'permissions_changed' %}
-        {{ _("An administrator changed what you may print (colour, one-sided prints, printers or hours). Your profile shows your permissions.") }}
+        {{ _("An administrator changed what you may print (colour, one-sided prints, printers or hours). <a href=\"/me\">Account</a> shows your permissions.") }}
         {% elif n.kind == 'job_refused' %}
         {% set why = d.get("why") %}{% set who = d.get("printer") or n.key %}
-        {% if why == 'printer' %}{{ _("Your print to “%(printer)s” was refused: your account is not allowed to use that printer. Your profile shows the printers you can use.", printer=who) }}
+        {% if why == 'printer' %}{{ _("Your print to “%(printer)s” was refused: your account is not allowed to use that printer. <a href=\"/me\">Account</a> shows the printers you can use.", printer=who) }}
         {% elif why == 'hours' %}{% if d.get("days") and d.get("start") is not none and d.get("end") is not none %}{{ _("Your print to “%(printer)s” was refused: printing is allowed only %(window)s.", printer=who, window=hours_text(d.days, d.start, d.end)) }}{% else %}{{ _("Your print to “%(printer)s” was refused: printing is not allowed at this hour.", printer=who) }}{% endif %}
         {% elif why == 'color' %}{{ _("Your print to “%(printer)s” was refused: colour printing is not allowed for your account. Choose black and white in the print window and send it again.", printer=who) }}
         {% elif why == 'one_sided' %}{{ _("Your print to “%(printer)s” was refused: one-sided printing is not allowed for your account. Choose double-sided in the print window and send it again.", printer=who) }}
         {% else %}{{ _("Your print to “%(printer)s” was refused.", printer=who) }}{% endif %}
         {% elif n.kind == 'quota_reached' %}
         {% set noun = _("page") if d.get("metric") == "pages" else _("job") %}
-        {{ _("Your print to “%(printer)s” was refused: the %(period)s %(noun)s limit is reached (%(used)s/%(limit)s). You can ask for more quota from your profile.", printer=d.get("printer") or "?", period=_(d.get("period", "")), noun=noun, used=d.get("used", "?"), limit=d.get("limit", "?")) }}
+        {{ _("Your print to “%(printer)s” was refused: the %(period)s %(noun)s limit is reached (%(used)s/%(limit)s). <a href=\"/me/request/quota\">Ask for more quota</a>.", printer=d.get("printer") or "?", period=_(d.get("period", "")), noun=noun, used=d.get("used", "?"), limit=d.get("limit", "?")) }}
         {% elif n.kind == 'job_adjusted' %}
         {% set who = d.get("printer") or "?" %}
         {% for c in d.get("changed", []) %}{% if not loop.first %}<br>{% endif %}{% if c == 'color' %}{{ _("Your print to “%(printer)s” was made in black and white: colour printing is not allowed for your account.", printer=who) }}{% elif c == 'one_sided' %}{{ _("Your print to “%(printer)s” was made double-sided: one-sided printing is not allowed for your account.", printer=who) }}{% endif %}{% endfor %}
@@ -76,15 +75,16 @@
         {% endif %}
         {% else %}{{ n.kind }}{% endif %}
         {% if n.count > 1 and n.kind in ('job_refused', 'job_adjusted', 'quota_reached', 'scan_window_mismatch') %}<span class="muted">(×{{ n.count }})</span>{% endif %}
-      </td>
-      <td>{% if n.dismissed_at %}<span class="muted">{{ _("dismissed") }}</span>
-        {% else %}<form method="post" action="/me/notices/{{ n.id }}/dismiss"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss") }}</button></form>{% endif %}</td>
-    </tr>
+      </span>
+      <span class="nend">{% if n.dismissed_at %}<span class="muted">{{ _("dismissed") }}</span>
+        {% else %}<form method="post" action="/me/notices/{{ n.id }}/dismiss"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss") }}</button></form>{% endif %}</span>
+    </li>
     {% endfor %}
-  </table>
-  {% else %}<p>{{ _("No notices.") }}</p>{% endif %}
-  <div class="row on-actions">
+  </ul>
+  {% else %}<p class="muted">{{ _("No notices.") }}</p>{% endif %}
+  <div class="actions">
     {% if own_rows|selectattr('dismissed_at', 'none')|list %}
     <form method="post" action="/me/notices/dismiss-all"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss all") }}</button></form>
     {% endif %}
+    <a class="btn sec" href="{{ own_base }}{{ '' if show_all else own_base_q ~ 'all=1' }}">{{ _("Hide dismissed") if show_all else _("Show dismissed too") }}</a>
   </div>

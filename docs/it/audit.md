@@ -6,8 +6,8 @@ SpoolSteward tiene **due registri in cui si aggiunge soltanto**:
 
 | Registro | Tabella | Contenuto | Pagina |
 |---|---|---|---|
-| Audit di stampe e scansioni | `job_log` | chi ha stampato o scansionato cosa | **Audit** (`/admin/jobs`) |
-| Azioni amministrative | `admin_audit` | chi ha fatto cosa nel portale | **Azioni admin** (`/admin/actions`) |
+| Audit di stampe e scansioni | `job_log` | chi ha stampato o scansionato cosa | **Registro** → *Stampe e scansioni* (`/admin/jobs`) |
+| Azioni amministrative | `admin_audit` | chi ha fatto cosa nel portale | **Registro** → *Azioni degli admin* (`/admin/actions`) |
 
 Gli id non si riusano mai. **Nessuna funzione del portale cancella righe.** L'audit si conserva per sempre.
 
@@ -15,9 +15,9 @@ Gli id non si riusano mai. **Nessuna funzione del portale cancella righe.** L'au
 
 Ogni riga ha: numero progressivo, ora, utente, dispositivo (coda di stampa o scanner), nome file, tipo (stampa / scansione), esito, pagine, motivo del rifiuto e opzioni (carta, colore, fronte-retro, sorgente, copie, intervallo di pagine, commento, `via` web / IPP…).
 
-![La pagina dell'audit: interruttore dell'aggiornamento automatico, filtri per utente, nome del file e stato, esportazione CSV e report, e una scansione completata](../images/it/admin-audit.png)
+![Il Registro: interruttore dell'aggiornamento automatico con il suo intervallo, le schede, i filtri per utente, nome del file e stato, e le righe raggruppate per giorno](../images/it/admin-audit.png)
 
-**Il nome del file** si può smettere di salvare con il pulsante verde/rosso in alto a destra della pagina; con la retention (`.env`) sparisce dopo un numero di giorni a scelta. La riga resta sempre. Dettagli: [protezione-dati.md](protezione-dati.md).
+**Il nome del file** si può smettere di salvare con l'interruttore *Salva i nomi dei file* in *Sistema*; con la retention (`.env`) sparisce dopo un numero di giorni a scelta. La riga resta sempre. Dettagli: [protezione-dati.md](protezione-dati.md).
 
 | Stato | Significato |
 |---|---|
@@ -28,13 +28,13 @@ Ogni riga ha: numero progressivo, ora, utente, dispositivo (coda di stampa o sca
 | `failed` | Accettato ma la stampante o lo scanner non ha potuto eseguirlo. Non conta |
 | `canceled` | Fermato prima di stampare, dall'utente, da un amministratore o dal programma di scansione. La quota si libera |
 
-Ha un interruttore **Aggiornamento automatico** (intervallo nelle *Impostazioni*, predefinito 30 s; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; la scelta la ricorda il browser). I testi lunghi sono accorciati con «…» e si leggono per intero in un popup. Sono disponibili filtri ed **esportazione CSV**. *Annulla* ferma un job in coda (con l'identità del proprietario).
+Le righe sono raggruppate per giorno (*Oggi*, *Ieri*, poi il giorno della settimana e la data) e si **aprono** con un clic: il dettaglio ha il numero, il nome intero del file, l'ora con i secondi, le opzioni, le pagine, il commento e la nota intera con il pulsante di copia. Un rifiuto o un errore mostra il motivo in rosso nella riga stessa. La pagina ha un interruttore di **aggiornamento automatico** con l'intervallo accanto (15, 30 o 60 s; la scelta è salvata per te; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; l'interruttore lo ricorda il browser) e non si ricarica mentre una riga è aperta. Sono disponibili filtri ed **esportazione CSV**. *Annulla stampa* sta nel dettaglio di una stampa in coda (usa l'identità del proprietario). Le persone vedono le proprie ultime stampe in *Account*.
 
-Le scansioni senza credenziali (eSCL anonimo) mostrano IP e nome host di chi chiama nella colonna delle informazioni. Una scansione fatta con una finestra di scansione mostra l'indirizzo da cui è arrivata; una richiesta rifiutata perché arrivava da un indirizzo diverso da quello della finestra è una riga *negata* a nome del proprietario, e l'icona mostra i due indirizzi.
+Le scansioni senza credenziali (eSCL anonimo) mostrano IP e nome host di chi chiama nel dettaglio della riga. Una scansione fatta con una finestra di scansione mostra l'indirizzo da cui è arrivata; una richiesta rifiutata perché arrivava da un indirizzo diverso da quello della finestra è una riga *negata* a nome del proprietario, e l'icona mostra i due indirizzi.
 
 ### Report di utilizzo
 
-*Report* (pulsante accanto a *Esporta CSV*, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli il periodo con un pulsante (*Oggi*, *Ultimi 7 giorni*, *Questo mese*, *Mese scorso*, *Ultimi 30 giorni*, *Quest'anno*) oppure scrivendo le due date come `2026-10-31`, quanti utenti elencare, i gruppi da **escludere** e **Report dettagliato**, che aggiunge per ogni
+*Report* (la terza scheda del Registro, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli il periodo con un pulsante (*Oggi*, *Ultimi 7 giorni*, *Questo mese*, *Mese scorso*, *Ultimi 30 giorni*, *Quest'anno*) oppure scrivendo le due date come `2026-10-31`, quanti utenti elencare, i gruppi da **escludere** e **Report dettagliato**, che aggiunge per ogni
 utente le stampe per stampante. Lo vedi nella pagina o lo scarichi in **CSV** o **PDF**. Contano solo le stampe (completate, in attesa o in corso). Le righe già spostate in un archivio compresso non vengono lette: la pagina avvisa quando il periodo arriva fin lì. Il PDF è in inglese con i font standard, quindi i nomi con lettere cirilliche o cinesi vi compaiono come `?`; il CSV li conserva.
 
 ## 2. Allineamento con CUPS

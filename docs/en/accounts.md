@@ -34,7 +34,7 @@ A group can be marked **requestable**: users may then ask to move into it. Admin
 
 Operating systems keep print passwords in clear text (for example `printers.conf` on Linux), so clients **never** use the domain password: they use a **personal print key**.
 
-- Created by the user in *Profile → Create a key* (a label per device). Shown **once**; stored only as a sha256 hash of 192 random bits. Valid **only for printing and scanning**; it never opens the portal.
+- Created by the user in *Devices → Create key* (a label per device). Shown **once**; stored only as a sha256 hash of 192 random bits. Valid **only for printing and scanning**; it never opens the portal.
 - **The user chooses how long it lasts**: 1, 3 or 6 months, **1 year (suggested)**, 1 year and 6 months, 2 years, or **one print only**. The longest is `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` (90 days) for RADIUS users and `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` (730) for local ones; the menu shows only what fits. A RADIUS user has to log in again for another key,
   so someone who leaves the company stops printing at the expiry.
 - **Single-use key**: valid for one print. If nobody uses it, it stops after `SPOOLSTEWARD_KEY_ONCE_HOURS` hours (24). Once its print is accepted the key leaves the list; for `SPOOLSTEWARD_KEY_ONCE_GRACE_SECONDS` seconds (120) it can still ask how the job is going, not print another. A print refused by the quota does not spend it; one that was accepted and then failed does.
@@ -65,7 +65,7 @@ The user's edit page shows where the account signs in (local or RADIUS) as plain
 
 ## 9. Self-registration
 
-An administrator can let people create their own **local** account: switch **Registration** on in *Users* (the window asks for the mode, how long it stays open and how many accounts it allows; at the first limit reached it closes). It is one switch for all administrators, off by default, and every change is in the administrators' log. The login page then links to `/register`.
+An administrator can let people create their own **local** account: open registration in *People → Registration* (the form asks for the mode, how long it stays open and how many accounts it allows; at the first limit reached it closes). It is one switch for all administrators, off by default, and every change is in the administrators' log. The login page then links to `/register`.
 
 - The person chooses a name, a password (twice) and a group among those marked **requestable**. Never an administrator, never another group. With no requestable group, registration can not be opened (and closes by itself if the last one stops being requestable).
 - **Open**: the account works at once and the person is logged in. **With approval**: the account is created disabled and appears in *Requests*; **Approve** enables it, **Reject** deletes it. Nobody decided within `SPOOLSTEWARD_REQUEST_TTL_DAYS`: it is deleted. Pending ones stay manageable when registration is switched off.

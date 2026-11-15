@@ -1,10 +1,3 @@
-// "…" in the Reason column: the whole reason in a window (empty column = the user wrote none)
-document.addEventListener('click', function (e) {
-  var b = e.target.closest && e.target.closest('button.showreason'); if (!b) return;
-  document.getElementById('reason-who').textContent = b.dataset.user + ' · ' + b.dataset.what;
-  document.getElementById('reason-text').textContent = b.dataset.reason;
-  document.getElementById('reason-dlg').showModal();
-});
 // the date field appears (in CSS) only for "until the end of…"; it is required only then
 document.addEventListener('change', function (e) {
   var f = e.target.closest && e.target.closest('form.decide'); if (!f || !f.elements.until) return;
@@ -15,7 +8,9 @@ document.addEventListener('change', function (e) {
 // the user already has). With it, only what the chosen user lacks is offered, asked to the server for that user alone;
 // if the answer does not come, everything is offered (the server still refuses what the user already has).
 (function () {
-  var f = document.forms.grantform, known = {}, everything = {
+  var f = document.forms.grantform;
+  if (!f) return;  // only the Grants tab has the form
+  var known = {}, everything = {
     perms: Array.prototype.map.call(f.perm.options, function (o) { return o.value; }),
     metrics: Array.prototype.map.call(f.metric.options, function (o) { return o.value; }),
     printers: Array.prototype.map.call(f.printer.options, function (o) { return o.value; })};

@@ -79,18 +79,22 @@ def _row(db: Session, t: BackupTarget, admin: User, instance: str, now: datetime
             "health": service.health(t, now), "mine": t.owner_id == admin.id}
 
 
-@router.get("", response_class=HTMLResponse)
-def listing(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
+def page_context(request: Request, admin: User, db: Session) -> dict:
+    """What the System page needs to draw the backups and the update."""
     service.sync_global(db)
     instance, now = service.instance_id(db), datetime.now(UTC)
     targets = db.scalars(select(BackupTarget).order_by(BackupTarget.is_global.desc(), BackupTarget.id)).all()
     dead: list[str] = []
     rows = [_row(db, t, admin, instance, now, dead) for t in targets]
-    return render(request, "backups.html", admin, rows=rows,
-                  root=settings.backup_root, host_root=settings.backup_host_path, folders=[] if dead else _folders(),
-                  root_ok=Path(settings.backup_root).is_dir(), min_pass=crypto.MIN_PASSPHRASE, instance=instance,
-                  defaults=dict(hour=3, keep_daily=7, keep_weekly=4, keep_monthly=12),
-                  upd=update_panel(request, db))
+    return dict(rows=rows, root=settings.backup_root, host_root=settings.backup_host_path, folders=[] if dead else _folders(),
+                root_ok=Path(settings.backup_root).is_dir(), min_pass=crypto.MIN_PASSPHRASE, instance=instance,
+                defaults=dict(hour=3, keep_daily=7, keep_weekly=4, keep_monthly=12), upd=update_panel(request, db))
+
+
+@router.get("")
+def listing(admin: User = Depends(current_admin)):
+    """The backups are a section of the System page now."""
+    return back("/admin/system#backup")
 
 
 @router.post("", dependencies=[Depends(verify_csrf)])
@@ -112,7 +116,7 @@ def create(request: Request, name: str = Form(""), folder: str = Form(""), hour:
             bundle = recipient.strip()
     except (ValueError, crypto.CryptoError) as exc:
         flash(request, str(exc), "err")
-        return back("/admin/backups")
+        return back("/admin/system#backup")
     t = BackupTarget(owner_id=admin.id, owner_name=admin.username, mode=mode, recipient=bundle, **fields)
     db.add(t)
     db.flush()
@@ -120,7 +124,7 @@ def create(request: Request, name: str = Form(""), folder: str = Form(""), hour:
     db.commit()
     flash(request, _("Backup “%(name)s” created: it runs every day at %(hour)s:00", name=t.name, hour=f"{t.hour:02d}") +
           (_(". Write down the passphrase: the gateway does not keep it and without it the copies cannot be opened") if mode == "passphrase" else ""))
-    return back("/admin/backups")
+    return back("/admin/system#backup")
 
 
 @router.get("/{tid}/edit", response_class=HTMLResponse)
@@ -148,7 +152,7 @@ def update(request: Request, tid: int, name: str = Form(""), folder: str = Form(
     record(db, admin, "backup.update", "backup", t.id, name=t.name, folder=t.folder)
     db.commit()
     flash(request, _("Backup “%(name)s” updated", name=t.name))
-    return back("/admin/backups")
+    return back("/admin/system#backup")
 
 
 @router.post("/{tid}/toggle", dependencies=[Depends(verify_csrf)])
@@ -160,7 +164,7 @@ def toggle(request: Request, tid: int, admin: User = Depends(current_admin), db:
     record(db, admin, "backup.enable" if t.enabled else "backup.disable", "backup", t.id, name=t.name)
     db.commit()
     flash(request, _("Backup “%(name)s” activated", name=t.name) if t.enabled else _("Backup “%(name)s” suspended", name=t.name))
-    return back("/admin/backups")
+    return back("/admin/system#backup")
 
 
 @router.post("/{tid}/run", dependencies=[Depends(verify_csrf)])
@@ -175,8 +179,8 @@ async def run_now(request: Request, tid: int, admin: User = Depends(current_admi
             db.commit()
 
     await run_in_threadpool(note)
-    flash(request, _("Backup done: %(message)s", message=message) if ok else _("Backup FAILED: %(message)s", message=message), "ok" if ok else "err")
-    return back("/admin/backups")
+    flash(request, _("Backup done: %(message)s", message=message) if ok else _("Backup failed: %(message)s", message=message), "ok" if ok else "err")
+    return back("/admin/system#backup")
 
 
 @router.post("/{tid}/delete", dependencies=[Depends(verify_csrf)])
@@ -188,4 +192,4 @@ def delete(request: Request, tid: int, admin: User = Depends(current_admin), db:
     db.delete(t)
     db.commit()
     flash(request, _("Backup “%(name)s” deleted. The files already written in the folder stay where they are", name=t.name))
-    return back("/admin/backups")
+    return back("/admin/system#backup")

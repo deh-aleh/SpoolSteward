@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 
 from spoolsteward.timeutil import local_tz
 from spoolsteward.admin.common import back, check_csrf, current_user, flash, render
+from spoolsteward.admin.me import quota_rows
 from spoolsteward.config import settings
 from spoolsteward.cups_client import list_queues
 from spoolsteward.db.models import User
@@ -66,13 +67,20 @@ async def print_form(request: Request, user: User = Depends(current_user)):
     perms = await run_in_threadpool(permissions.load, request.app.state.sessionmaker, user)
     allowed = permissions.allowed_queues(perms, every)  # a printer the account may not use is not offered at all
     queues = ordering.arrange([q for q in allowed if q.get("online", True)], pos)
-    offline = [q["name"] for q in allowed if not q.get("online", True)]  # the device does not answer: do not offer it
+    offline_q = [q for q in allowed if not q.get("online", True)]  # the device does not answer: listed, but it can not be chosen
     outside = perms.window if perms.window is not None and not permissions.in_window(perms.window, datetime.now(UTC), local_tz()) else None
-    return render(request, "print.html", user, queues=queues, offline=offline, max_mb=settings.web_upload_mb,
+    quota_left = await run_in_threadpool(_quota_left, request.app.state.sessionmaker, user)
+    return render(request, "print.html", user, queues=queues, offline_q=offline_q, max_mb=settings.web_upload_mb, quota_left=quota_left,
                   comment_max=COMMENT_MAX, max_copies=settings.web_max_copies, perms=perms,
                   forbidden_all=bool(every) and not allowed, outside_hours=permissions.describe_window(outside) if outside else "",
                   queues_js={q["name"]: {"media": q.get("media", []), "media_default": q.get("media_default", ""), "color": bool(q.get("color")),
                                          "duplex": bool(q.get("duplex"))} for q in queues})
+
+
+def _quota_left(sm, user: User) -> list[dict]:
+    """What is left of each quota, for the line next to the button."""
+    with sm() as db:
+        return quota_rows(db, user)
 
 
 class _Refuse(Exception):
@@ -254,7 +262,7 @@ async def _refused(request: Request, sm, user: User, queue: str, decision, perm)
         return back("/me/print")
     if decision.quota:
         await run_in_threadpool(permissions.notify_quota, sm, user.id, queue, decision.quota)
-    flash(request, _("%(reason)s. You can ask for more quota below.", reason=decision.text()), "err")
+    flash(request, _("%(reason)s. You can ask for more quota here.", reason=decision.text()), "err")
     return back("/me")
 
 

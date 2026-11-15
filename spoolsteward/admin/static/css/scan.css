@@ -1,7 +1,11 @@
-/* scan.html */
-button.icon.sc-winbtn { margin-left:auto }
-button.ico.sc-go { padding:11px 22px }
+/* scan.html: the form, and next to it (from 1000px; under it on a narrower screen) the latest scans */
+.scancols { display:block; margin-top:20px }
+@media (min-width:1280px) { .scancols { display:grid; grid-template-columns:minmax(0,3fr) minmax(0,2fr); gap:0 48px; align-items:start } .scanrecent .sc-app { margin-top:0; padding-top:0; border-top:0 } }
+.sc-none { margin:20px 0 0 }
+.sc-go { min-width:120px }
 .sc-wait { display:none; margin-top:14px }
-.sc-wait p.sc-waitnote { margin:8px 0 0 }
-p.hint.sc-info { margin-bottom:0 }
-p.hint.sc-winnote { display:none }
+.sc-app { margin-top:32px; padding-top:20px; border-top:1px solid var(--line) }
+.sc-app p { margin-bottom:12px }
+.scanrecent h2 { margin-bottom:8px }
+.scanrecent .sc-app { margin-top:0; padding-top:0; border-top:0 } .scanrecent .sc-app + h2 { margin-top:32px }
+@media (max-width:1279px) { .scanrecent { margin-top:32px } }

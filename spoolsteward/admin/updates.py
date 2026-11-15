@@ -44,32 +44,32 @@ def panel(request: Request, db: Session) -> dict:
 async def start(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
     p = panel(request, db)
     if p["reason"]:
-        flash(request, _("The update cannot start now: see the Update box on this page"), "err")
-        return back("/admin/backups")
+        flash(request, _("The update cannot start now: see the Update section of the System page"), "err")
+        return back("/admin/system#update")
     form = await request.form()
     if form.get("version", p["info"]["version"]) != p["info"]["version"]:   # a newer check changed the offer meanwhile
-        flash(request, _("The update was not started: the version on offer has changed. Look at the Update box again."), "err")
-        return back("/admin/backups")
+        flash(request, _("The update was not started: the version on offer has changed. Look at the Update section again."), "err")
+        return back("/admin/system#update")
     if p["accept"] and form.get("accept") != "1":
         flash(request, _("The update was not started: tick the box in the confirmation to accept the warning."), "err")
-        return back("/admin/backups")
+        return back("/admin/system#update")
     # a fresh copy first: the one that makes the update acceptable may be a day old
     ok, message = await run_in_threadpool(service.run_target, request.app.state.sessionmaker, p["backup"].id, prune=False)
     if not ok:
         flash(request, _("The update was not started because the backup failed: %(error)s", error=message), "err")
-        return back("/admin/backups")
+        return back("/admin/system#update")
     version = p["info"]["version"]
     try:
         await run_in_threadpool(updates.write_request, version, admin.username, message.split(" ")[0])
     except (ValueError, OSError) as exc:
         log.error("update request not written: %s", exc)
         flash(request, _("The update could not be handed to the updater: %(error)s", error=str(exc)), "err")
-        return back("/admin/backups")
+        return back("/admin/system#update")
     record(db, admin, "update.request", "update", 0, version=version, beta=bool(p["info"].get("beta")),
            breaking=bool(p["info"].get("breaking")))
     db.commit()
     flash(request, _("Update to %(version)s requested. The gateway restarts in a minute or two; this page shows the result.", version=version))
-    return back("/admin/backups")
+    return back("/admin/system#update")
 
 
 @router.post("/dismiss", dependencies=[Depends(verify_csrf)])
@@ -79,4 +79,4 @@ async def dismiss(request: Request, admin: User = Depends(current_admin), db: Se
     except OSError as exc:
         log.error("update notice not hidden: %s", exc)
         flash(request, _("The notice could not be hidden: %(error)s", error=str(exc)), "err")
-    return back("/admin/backups")
+    return back("/admin/system#update")

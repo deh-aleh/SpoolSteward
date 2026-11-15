@@ -33,8 +33,9 @@ async def test_theme_rules_and_kept_forms(portal, admin):
     page = (await portal.get("/admin/users")).text
     assert "<style" not in page and '/admin/static/css/app.css' in page                  # the styles are a file, not inline
     css = (await portal.get("/admin/static/css/app.css")).text
-    assert "nav a:hover" in css and "#ffa733" in css                    # orange top bar
-    assert "button.maint:hover" not in css                              # the maintenance button is left out
-    assert "button.danger:hover" in css                                 # "Block use" / "Delete" swap colours
-    for url, marker in (("/admin/backups", "data-keep"), ("/me/print", 'data-keep'), ("/me/scan", 'data-keep="always"')):
+    assert "--bg:#E6E7EA" in css and "--key:#17181D" in css and "--brand:#E0306E" in css     # the colours of the design
+    assert "--ok" not in css and "--orange" not in css and "--extra" not in css           # no green, no violet, no orange
+    assert "button.danger:hover" in css                                 # "Block" / "Delete" are outlined in red
+    portal.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "p1", "info": "", "model": "", "online": True}])   # a printer: the form exists
+    for url, marker in (("/admin/system", "data-keep"), ("/me/print", 'data-keep')):
         assert marker in (await portal.get(url)).text, url

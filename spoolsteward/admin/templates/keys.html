@@ -1,59 +1,96 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Print keys") }}{% endblock %}
+{% from "macros.html" import status, copybox, menu_open, menu_close %}
+{% block title %}{{ _p("menu", "Devices") if own else _("Print keys") }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<div class="card">
-  <h1>{{ _("Print keys") }}{% if not own %} {{ _("of %(user)s", user=owner.username) }}{% endif %}</h1>
-  <p class="muted">{% if own %}{{ _("Each device has its own key: if you lose one, revoke only that key. User name <b>%(user)s</b>, server <b>%(server)s</b>.", user=owner.username, server=server) }}{% else %}{{ _('Switch a key off, extend it or revoke it: the device that uses it gets "not authorized" at once. A switched-off key keeps ageing: its expiry date does not move.') }}{% endif %}</p>
-  <table class="stack">
-    <tr><th>{{ _("Label") }}</th><th>{{ _("Starts with") }}</th><th>{{ _("Created") }}</th><th>{{ _("Expires") }}</th><th>{{ _("Last used") }}</th><th>{{ _("State") }}</th><th></th></tr>
+{% if not own %}<a class="back" href="/admin/users/{{ owner.id }}/edit">{{ icon("arrow-left", "sm") }}{{ _("Back to the user") }}</a>{% endif %}
+<div class="phead"><h1>{{ _p("menu", "Devices") if own else _("Print keys") }}</h1></div>
+{% if not own %}<p class="pinfo">{{ _("of %(user)s", user=owner.username) }}</p>{% endif %}
+
+<div class="cols wide-first">
+<div class="col-main">
+<section class="blk">
+  <div class="blk-head"><h2>{{ _("Keys") }}</h2></div>
+  <p class="note ky-intro">{% if own %}{{ _("Create a key for each device: it replaces your password and only works for printing. If you lose the device, revoke its key.") }}{% else %}{{ _('Switch a key off, extend it or revoke it: the device that uses it gets "not authorized" at once. A switched-off key keeps ageing: its expiry date does not move.') }}{% endif %}
+    {% if own and ipp_mode == 'keys' %} {{ _("The domain password is <b>not</b> accepted for printing.") }}{% endif %}</p>
+  {% if keys %}
+  <ul class="rows">
     {% for item in keys %}{% set k = item.k %}
-    <tr>
-      <td data-l="{{ _('Label') }}">{{ k.label }}</td><td data-l="{{ _('Starts with') }}" class="mono">{{ k.key_prefix }}…</td>
-      <td data-l="{{ _('Created') }}">{{ k.created_at|localtime('%Y-%m-%d') }}</td>
-      <td data-l="{{ _('Expires') }}">{% if k.single_use %}{{ k.expires_at|localtime('%Y-%m-%d %H:%M') }}{% elif k.expires_at %}{{ k.expires_at|localtime('%Y-%m-%d') }}{% else %}{{ _('never') }}{% endif %}</td>
-      <td data-l="{{ _('Last used') }}">{% if k.last_used_at %}{{ k.last_used_at|localtime('%Y-%m-%d %H:%M') }} <span class="muted">{{ k.last_used_ip or '' }}</span>{% else %}{{ _("never used") }}{% endif %}</td>
-      <td data-l="{{ _('State') }}">
-        {% if item.state == 'revoked' %}<span class="pill s-revoked">{{ _("revoked") }}</span>
-        {% elif item.state == 'expired' %}<span class="pill s-expired">{{ _("expired") }}</span>
-        {% elif item.state == 'disabled' %}<span class="pill s-disabled">{{ _("switched off") }}</span>
-        {% else %}<span class="pill s-ok">{{ _("active") }}</span>{% endif %}
-        {% if k.single_use %}<span class="pill">{{ _("single use") }}</span>{% endif %}
-        {% if item.vanishes %}<div class="muted">{{ _("leaves the list on %(date)s", date=item.vanishes|localtime('%Y-%m-%d')) }}</div>{% endif %}</td>
-      <td>
-        <div class="row">
-        {% if not own and item.state in ('active', 'disabled') %}
-          {% if item.state == 'active' %}<form method="post" action="{{ base }}/{{ k.id }}/disable"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Switch off") }}</button></form>
-          {% else %}<form method="post" action="{{ base }}/{{ k.id }}/enable"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Switch on") }}</button></form>{% endif %}
+    <li class="r2">
+      <span class="l1">{{ k.label }}{% if k.single_use %} <span class="pill">{{ _("single use") }}</span>{% endif %}</span>
+      <span class="l2"><span class="mono">{{ k.key_prefix }}…</span> · {{ _("created %(date)s", date=k.created_at|localtime('%Y-%m-%d')) }} ·
+        {% if k.single_use %}{{ _("expires %(date)s", date=k.expires_at|localtime('%Y-%m-%d %H:%M')) }}{% elif k.expires_at %}{{ _("expires %(date)s", date=k.expires_at|localtime('%Y-%m-%d')) }}{% else %}{{ _("never expires") }}{% endif %} ·
+        {% if k.last_used_at %}{{ _("used %(when)s", when=k.last_used_at|neartime) }}{% if k.last_used_ip %} <span class="mono">{{ k.last_used_ip }}</span>{% endif %}{% else %}{{ _("never used") }}{% endif %}
+        {% if item.vanishes %} · {{ _("leaves the list on %(date)s", date=item.vanishes|localtime('%Y-%m-%d')) }}{% endif %}</span>
+      <span class="end">
+        {% if item.state == 'revoked' %}{{ status('revoked', _("revoked")) }}
+        {% elif item.state == 'expired' %}{{ status('expired', _("expired")) }}
+        {% elif item.state == 'disabled' %}{{ status('disabled', _("switched off")) }}
+        {% else %}{{ status('active') }}{% endif %}
+        {% if item.state != 'revoked' %}
+        <form method="post" action="{{ base }}/{{ k.id }}/revoke" data-confirm="{{ _t('Revoke the key “%(label)s”?', label=k.label) }}" data-confirm-title="{{ _t('Revoke the key “%(label)s”?', label=k.label) }}" data-confirm-ok="{{ _t('Revoke') }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Revoke") }}</button></form>{% endif %}
+        {% if not own and item.state in ('active', 'disabled') or (not own and not k.single_use and item.state != 'revoked') %}
+        {{ menu_open() }}
+          {% if item.state == 'active' %}<form method="post" action="{{ base }}/{{ k.id }}/disable"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="mi">{{ _("Switch off") }}</button></form>
+          {% elif item.state == 'disabled' %}<form method="post" action="{{ base }}/{{ k.id }}/enable"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="mi">{{ _("Switch on") }}</button></form>{% endif %}
+          {% if not k.single_use and item.state != 'revoked' %}
+          <form method="post" action="{{ base }}/{{ k.id }}/extend" class="menuform"><input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <label class="small muted" for="ext-{{ k.id }}">{{ _("New validity") }}</label>
+            <select name="validity" id="ext-{{ k.id }}">{% for v, lbl in choices if v != 'once' %}<option value="{{ v }}" {{ 'selected' if v == default_choice }}>{{ lbl }}</option>{% endfor %}</select>
+            <button class="sec">{{ _("Extend") }}</button></form>{% endif %}
+        {{ menu_close() }}
         {% endif %}
-        {% if not own and not k.single_use and item.state != 'revoked' %}
-          <form method="post" action="{{ base }}/{{ k.id }}/extend" class="row"><input type="hidden" name="csrf_token" value="{{ csrf }}">
-            <select name="validity" aria-label="{{ _t('New validity') }}">{% for v, lbl in choices if v != 'once' %}<option value="{{ v }}" {{ 'selected' if v == default_choice }}>{{ lbl }}</option>{% endfor %}</select>
-            <button class="sec">{{ _("Extend") }}</button></form>
-        {% endif %}
-        {% if item.state != 'revoked' %}<form method="post" action="{{ base }}/{{ k.id }}/revoke" data-confirm="{{ _t('Revoke the key “%(label)s”?', label=k.label) }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Revoke") }}</button></form>{% endif %}
-        </div></td>
-    </tr>
-    {% else %}<tr><td colspan="7" class="muted">{{ _("No keys.") }}</td></tr>{% endfor %}
-  </table>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="muted">{{ _("No keys.") }}</p>{% endif %}
   {% set live = keys|selectattr('usable')|list %}
   {% if live|length > 1 or (not own and live) %}
   <form method="post" action="{{ '/me/keys/revoke-all' if own else '/admin/users/%d/revoke-keys' % owner.id }}" class="ky-revoke"
-        {% if not own %}data-confirm="{{ _t('Revoke ALL the keys of %(user)s?', user=owner.username) }}"{% else %}data-confirm="{{ _t('Revoke ALL your keys?') }}"{% endif %}>
+        data-confirm="{{ _t('Revoke all the keys of %(user)s?', user=owner.username) if not own else _t('Revoke all your keys?') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Revoke all active keys (%(n)s)", n=live|length) }}</button>
   </form>
   {% endif %}
+</section>
+
+{% if own %}
+<section class="blk">
+  <h2>{{ _("New key") }}</h2>
+  <form method="post" action="/me/keys" class="formpage">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <div class="frows">
+      <div class="frow"><label class="permhead" for="key-label">{{ _("Device") }}</label>
+        <div class="fctl"><input type="text" id="key-label" name="label" placeholder="{{ _('laptop') }}" maxlength="64" required></div></div>
+      <div class="frow"><label class="permhead" for="key-validity">{{ _("Valid for") }}</label>
+        <div class="fctl"><select name="validity" id="key-validity">{% for v, lbl in choices %}<option value="{{ v }}" {{ 'selected' if v == default_choice }}>{{ lbl }}</option>{% endfor %}</select>
+          <span class="hint">{{ _("The key is shown once.") }}</span></div></div>
+    </div>
+    <div class="actions"><button>{{ _("Create key") }}</button></div>
+  </form>
+</section>
+{% endif %}
 </div>
 {% if own %}
-<form class="card" method="post" action="/me/keys">
-  <h2>{{ _("New key") }}</h2>
-  <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <div class="row"><input type="text" name="label" class="ky-label" placeholder="{{ _('For which device? (e.g. laptop)') }}" maxlength="64" required>
-    <label>{{ _("Valid for") }} <select name="validity">{% for v, lbl in choices %}<option value="{{ v }}" {{ 'selected' if v == default_choice }}>{{ lbl }}</option>{% endfor %}</select></label>
-    <button>{{ _("Create a key") }}</button></div>
-  <p class="muted">{{ _("The key is shown only once, together with the ready-made address to paste when adding the printer.") }}</p>
-</form>
-{% else %}
-<p><a href="/admin/users/{{ owner.id }}/edit">← {{ _("Back to the user") }}</a></p>
+<div class="col-side">
+<section class="blk" id="connect">
+  <h2>{{ _("Connect a device") }}</h2>
+  <dl class="kv connect"><dt>{{ _("User name") }}</dt><dd>{{ copybox(me.username, "mono") }}</dd>
+    <dt>{{ _("Server") }}</dt><dd>{{ copybox(server, "mono") }}</dd></dl>
+  <ul class="rows plain howto">
+    <li><details><summary class="r2"><span class="l1">{{ _("Phone or tablet") }}</span><span class="end">{{ icon("chevron-down", "chev") }}</span></summary>
+      <div class="detail"><p>{{ _('Nothing to set up in the browser. To print from Android apps: install <b>Mopria Print Service</b> and enter your user name and key.') }}</p></div></details></li>
+    <li><details><summary class="r2"><span class="l1">Windows</span><span class="end">{{ icon("chevron-down", "chev") }}</span></summary>
+      <div class="detail"><p>{{ _('Settings → Printers &amp; scanners → Add device, then enter <b>%(user)s</b> and the key when you print and tick "Remember my credentials".', user=me.username) }} <a href="/docs/windows">{{ _("Step-by-step guide") }}</a></p></div></details></li>
+    <li><details><summary class="r2"><span class="l1">Linux</span><span class="end">{{ icon("chevron-down", "chev") }}</span></summary>
+      <div class="detail"><p>{{ _("Create a key above: the next page shows the ready-made command (user name and key included), to paste just once.") }}
+        {{ _('Or <span class="mono">scripts/add-printer-linux.sh</span> from the project.') }}</p></div></details></li>
+    <li><details><summary class="r2"><span class="l1">macOS</span><span class="end">{{ icon("chevron-down", "chev") }}</span></summary>
+      <div class="detail"><p>{{ _('Add a network printer with the address <span class="mono">ipps://%(server)s/printers/&lt;name&gt;</span>; when it asks for the user name and password enter <b>%(user)s</b> and the key, and choose "remember".', server=server, user=me.username) }} <span class="muted">({{ _("Not yet tried on these systems.") }})</span></p></div></details></li>
+  </ul>
+  {% if queues %}<p class="note">{{ _("Available printers:") }} {% for q in queues %}<span class="mono">{{ q.name }}</span>{% if not loop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+</section>
+</div>
 {% endif %}
+</div>
 {% endblock %}

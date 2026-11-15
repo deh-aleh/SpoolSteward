@@ -24,13 +24,18 @@ SAME_JOB_LATE = 3600.0   # the job is made when the upload starts: a slow upload
 _ATTRS = ["job-id", "job-state", "job-impressions-completed", "time-at-creation"]
 
 
-async def fetch_jobs(upstream: httpx.AsyncClient, printer: str) -> dict[int, tuple[int, int, int | None]] | None:
-    """{cups_job_id: (job-state, impressions_completed, time-at-creation)} for a queue, or None if CUPS failed."""
+async def fetch_jobs(upstream: httpx.AsyncClient, printer: str,
+                     first_job_id: int | None = None) -> dict[int, tuple[int, int, int | None]] | None:
+    """{cups_job_id: (job-state, impressions_completed, time-at-creation)} for a queue, or None if CUPS failed.
+    CUPS answers a Get-Jobs with at most its first 500 jobs, oldest first: on a queue with a long history the recent jobs
+    would never be in the answer. `first_job_id` (the oldest job we still wait for) starts the list there."""
     req = codec.make_request(
         codec.GET_JOBS, 1, printer_uri=f"ipp://localhost/printers/{printer}", requesting_user_name="gateway"
     )
     ops = req.group(codec.TAG_OPERATION)
     ops.attrs.append(codec.Attr("which-jobs", [codec.Val(codec.TAG_KEYWORD, "all")]))
+    if first_job_id:
+        ops.attrs.append(codec.Attr("first-job-id", [codec.Val(codec.TAG_INTEGER, first_job_id)]))
     ops.attrs.append(codec.Attr("requested-attributes", [codec.Val(codec.TAG_KEYWORD, k) for k in _ATTRS]))
     try:
         resp = await upstream.post(
@@ -128,7 +133,8 @@ async def reconcile_once(sm, upstream: httpx.AsyncClient, now: datetime | None =
     if not pending:
         return released
     printers = {r.printer for r in pending}
-    cups = {p: await fetch_jobs(upstream, p) for p in printers}
+    oldest = {p: min(r.cups_job_id for r in pending if r.printer == p) for p in printers}
+    cups = {p: await fetch_jobs(upstream, p, oldest[p]) for p in printers}
     return released + await run_in_threadpool(_apply, sm, [r.id for r in pending], cups, now)
 
 

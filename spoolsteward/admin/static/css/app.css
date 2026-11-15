@@ -1,332 +1,423 @@
-:root { --bg:#f6f7f9; --card:#fff; --fg:#1d2330; --muted:#667085; --line:#e3e6ec; --accent:#2457d6; --ok:#12805c; --err:#b42318; --warn:#9a6700; --extra:#7a3fd0; --orange:#c2570c; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#12151c; --card:#1a1f2b; --fg:#e7eaf0; --muted:#98a2b3; --line:#2b3242; --accent:#6c93f5; --ok:#4cc29a; --err:#f97066; --warn:#e3b341; --extra:#b794f4; --orange:#ffa733; } }
-:root[data-theme="dark"] { --bg:#12151c; --card:#1a1f2b; --fg:#e7eaf0; --muted:#98a2b3; --line:#2b3242; --accent:#6c93f5; --ok:#4cc29a; --err:#f97066; --warn:#e3b341; --extra:#b794f4; --orange:#ffa733; }
+/* SpoolSteward portal. Rules for colour, shape and text: SpoolSteward-design.md. No inline styles (CSP style-src 'self'). */
+@font-face { font-family:"Sofia Sans Condensed"; font-style:normal; font-weight:600; font-display:swap; src:url("../fonts/sofia-latin.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD }
+@font-face { font-family:"Sofia Sans Condensed"; font-style:normal; font-weight:600; font-display:swap; src:url("../fonts/sofia-latin-ext.woff2") format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF }
+@font-face { font-family:"Sofia Sans Condensed"; font-style:normal; font-weight:600; font-display:swap; src:url("../fonts/sofia-cyrillic.woff2") format("woff2");
+  unicode-range:U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116 }
+
+/* ---- tokens (design 2.1) ---- */
+:root { --bg:#E6E7EA; --card:#FBFAF7; --fg:#17181D; --muted:#555963; --line:#CDCFD5; --control:#70747F; --key:#17181D; --key-fg:#F4EFE6;
+  --accent:#075E77; --warn:#6B4F00; --err:#A52A17; --brand:#E0306E; --brand-strong:#B71C55; --edge:#B9AF9A; --maint:#F2C230;
+  --head:"Sofia Sans Condensed","Arial Narrow",system-ui,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#17181D; --card:#22242C; --fg:#F4EFE6; --muted:#A4A7B0; --line:#3A3D48; --control:#858995;
+  --key:#F4EFE6; --key-fg:#17181D; --accent:#62C6E4; --warn:#F2C230; --err:#FF8370; --edge:#6B6F7A } }
+:root[data-theme="dark"] { --bg:#17181D; --card:#22242C; --fg:#F4EFE6; --muted:#A4A7B0; --line:#3A3D48; --control:#858995;
+  --key:#F4EFE6; --key-fg:#17181D; --accent:#62C6E4; --warn:#F2C230; --err:#FF8370; --edge:#6B6F7A }
 :root { color-scheme: light dark; } :root[data-theme="light"] { color-scheme: light; } :root[data-theme="dark"] { color-scheme: dark; }
 * { box-sizing:border-box }
-:lang(zh) { font-family:system-ui,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif }  /* the browser picks the right Han glyphs from lang */
-body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,sans-serif; -webkit-text-size-adjust:100% }
-header { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:100 }
-/* brand block: logo, name and (user name) under it; the whole block opens the settings */
-a.brand { display:flex; align-items:center; gap:10px; color:var(--fg); text-decoration:none; padding:3px 10px 3px 4px; margin-right:4px; border-radius:8px; border:1px solid transparent }
-a.brand:hover, a.brand.on { background:var(--bg); border-color:var(--line) }
-a.brand .bname { display:flex; flex-direction:column; line-height:1.15 }
-a.brand .bname b { font-size:16px }
-a.brand .bname small { color:var(--muted); font-size:12px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.logo img { display:block } a.brand .logo img { width:34px; height:34px }
-a.brand .gear { width:16px; height:16px; color:var(--muted) }
-a.brand:hover .gear, a.brand.on .gear { color:var(--orange) }
-/* two logos, one per theme: ink tile on a light page, paper tile on a dark one (same rules as the colours above) */
+:lang(zh) { --head:system-ui,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif }
+:lang(zh) body { font-family:system-ui,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif }  /* the browser picks the right Han glyphs from lang */
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui,sans-serif; -webkit-text-size-adjust:100%; font-variant-numeric:tabular-nums }
+a { color:var(--accent); text-underline-offset:2px }
+:focus-visible { outline:2px solid var(--fg); outline-offset:2px }
+h1 { font:600 26.4px/1.2 var(--head); margin:0 }
+h2 { font-size:15px; font-weight:600; margin:0 0 8px }
+h3 { font-size:15px; font-weight:600; margin:12px 0 6px }
+p { margin:0 0 12px }
+.muted { color:var(--muted) } .small, small { font-size:13px } .mono { font-family:var(--mono); font-size:13px } td.mono { overflow-wrap:anywhere } .nowrap { white-space:nowrap }
+.wrap { overflow-wrap:anywhere; word-break:break-word } .cv { min-width:0 }
+.visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0 }
+[hidden] { display:none !important }
+.ic { width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.75; stroke-linecap:round; stroke-linejoin:round; vertical-align:-4px }
+.ic.sm { width:14px; height:14px; vertical-align:-2px }
+
+/* ---- the sheet (design 4.1): a --card surface with the bottom-left corner cut at 45°, a magenta flap and a 4px edge ---- */
+.sheet { --cut:56px; position:relative; isolation:isolate; padding:28px 32px calc(28px + 4px) }
+.sheet::before, .sheet::after { content:""; position:absolute; inset:0; z-index:-1;
+  clip-path:polygon(0 0, 100% 0, 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut))) }
+.sheet::before { background:var(--edge); transform:translate(4px,4px) }
+.sheet::after { background:linear-gradient(to bottom left, var(--brand) 50%, transparent 50%) left bottom / var(--cut) var(--cut) no-repeat, var(--card); forced-color-adjust:none }
+.sheet { margin:0 4px 4px 0 }
+
+/* the small sheet of an empty page (design 4.1): the same cut and flap, no thickness */
+.sheet.mini { --cut:12px; display:inline-block; flex:none; width:30px; height:40px; padding:0; margin:0 14px 0 0 }
+.sheet.mini::before { display:none }
+.emptyline { display:flex; align-items:center; margin:16px 0 }
+
+/* ---- layout: a sidebar, then the page ---- */
+body.app { display:grid; grid-template-columns:229px minmax(0,1fr); min-height:100vh }
+#sidebar { position:sticky; top:0; align-self:start; height:100vh; display:flex; flex-direction:column; gap:4px; padding:16px 12px; border-right:1px solid var(--line); overflow-y:auto; z-index:100 }
+a.brand { display:flex; align-items:center; gap:10px; padding:0 4px; margin-bottom:16px; color:var(--fg); text-decoration:none; font:600 28.2px/1 var(--head) }
+.logo img { display:block; width:32px; height:32px }
 .logo img.logo-l { display:none }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo img.logo-d { display:none } :root:not([data-theme="light"]) .logo img.logo-l { display:block } }
 :root[data-theme="dark"] .logo img.logo-d { display:none } :root[data-theme="dark"] .logo img.logo-l { display:block }
-.hactions { display:flex; align-items:center; gap:8px } .hactions form { margin:0 }
-.iconbtn { width:40px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center }
-.iconbtn svg { width:20px; height:20px }
-/* phone menu button: it only shows on phones, and only once scripts have run (see the phone block) */
-.navtoggle { display:none; position:relative } .navtoggle .cls { display:none } header.open .navtoggle .cls { display:block } header.open .navtoggle .ham { display:none }
-a.bell, a.helpbtn { position:relative; color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:6px }
-a.bell:hover, a.bell.on, a.helpbtn:hover, a.helpbtn.on { color:var(--orange); background:var(--bg) }
-a.bell .belln, .navtoggle .belln { position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#b42318; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center }
-nav { display:flex; flex-wrap:wrap; gap:2px }
-nav a { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap }
-nav a.on { background:var(--bg) }
-/* top bar: the background stays, the text turns orange on hover and for the page you are on (the maintenance
-   button is the exception: it is red/green on purpose) */
-nav a:hover, nav a.on, .who:hover, .who.on, header button.sec:hover { color:var(--orange) }
-nav a:hover, .who:hover { background:var(--bg) }
-header button.sec:hover { border-color:var(--orange) }
-.spacer { flex:1 }
-.who { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; border:1px solid var(--line) }
-.who.on { background:var(--bg) }
-main { max-width:1200px; margin:0 auto; padding:16px }
-/* narrow pages (settings): centred; on a computer a little bigger text */
-.narrow { max-width:680px; margin:0 auto }
-@media (min-width:701px) { .narrow { font-size:15.5px } .narrow h1 { font-size:20px } .narrow h2 { font-size:16.5px } }
-a { color:var(--accent) }
-.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:16px; overflow-x:auto }
-h1 { font-size:18px; margin:0 0 12px } h2 { font-size:15px; margin:14px 0 8px } .card > h2:first-child { margin-top:0 }
-table { border-collapse:collapse; width:100% }
-th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle }
-th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em }
-input, select, button, .btn { font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:5px 8px }
-input { text-overflow:ellipsis }  /* a hint longer than the box ends in "…" instead of being cut in the middle of a letter */
-input[type=number] { width:90px } input[type=text], input[type=password] { min-width:140px }
-button, .btn { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); text-decoration:none; display:inline-block; text-align:center }
-button.sec, .btn.sec { background:transparent; color:var(--fg); border-color:var(--line) }
-button.danger, .btn.danger { background:transparent; color:var(--err); border-color:var(--err) }
-button.danger:hover, .btn.danger:hover { background:var(--err); color:var(--card); border-color:var(--err) }  /* colours swap on hover */
-button:disabled { opacity:.5; cursor:not-allowed }
-.row { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center }
-/* the buttons that finish a form (save, cancel, send…): a clear gap between them and from the fields above */
-.actions { display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; margin-top:18px } .actions form { margin:0 }
-.flash { padding:8px 12px; border-radius:6px; margin-bottom:12px; border:1px solid var(--line); background:var(--card) }
-.flash.ok { color:var(--ok) } .flash.err { color:var(--err) }
-.pill { display:inline-block; padding:1px 8px; border-radius:99px; font-size:12px; border:1px solid var(--line) }
-.s-accepted,.s-completed { color:var(--ok) } .s-denied,.s-failed { color:var(--err) } .s-canceled,.s-held,.s-pending { color:var(--warn) } .s-approved,.s-ok,.s-active { color:var(--ok) } .s-disabled { color:var(--warn) } .s-rejected,.s-revoked,.s-expired,.s-ended,.s-missing,.s-modified { color:var(--err) }
-.muted { color:var(--muted) } .mono { font-family:ui-monospace,monospace; font-size:13px } .nowrap { white-space:nowrap }
-.extra { color:var(--extra); font-weight:600 } .inherited { color:var(--muted); font-style:italic }
-.badge { background:var(--err); color:#fff; border-radius:99px; padding:0 7px; font-size:12px }
-.secret { font:600 17px ui-monospace,monospace; padding:12px; border:1px dashed var(--accent); border-radius:8px; word-break:break-all; user-select:all; background:var(--bg) }
-textarea { font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:6px 8px; width:100%; min-height:70px }
-.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px }
-.grid2 > div { min-width:0 }  /* a long queue name must not push the next column */
-.grid2 td.mono, .grid2 dd { overflow-wrap:anywhere }
-/* login and first-start pages: one centred box, no menu */
+#sidebar nav { display:flex; flex-direction:column; gap:2px }
+.navlabel { margin:16px 10px 4px; font-size:13px; color:var(--muted) }
+.navrule { border:0; border-top:1px solid var(--line); margin:12px 0 }
+a.navitem { --cut:13px; font-size:15.75px; position:relative; isolation:isolate; display:flex; align-items:center; gap:10px; min-height:36px; padding:6px 10px; border-radius:5px; color:var(--fg); text-decoration:none }
+a.navitem:hover { background:color-mix(in srgb, var(--fg) 8%, transparent) }
+a.navitem.on { color:var(--key-fg); font-weight:600; border-radius:0 }
+a.navitem.on:hover { background:none }
+a.navitem.on::before { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(to bottom left, var(--brand) 50%, transparent 50%) left bottom / var(--cut) var(--cut) no-repeat, var(--key);
+  clip-path:polygon(0 0, 100% 0, 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); forced-color-adjust:none }
+a.navitem .lbl { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.count { min-width:20px; height:20px; padding:0 6px; border-radius:99px; background:var(--brand-strong); color:#fff; font:600 12px/20px system-ui,sans-serif; text-align:center }
+.sidefoot { margin-top:auto; padding-top:12px; border-top:1px solid var(--line); display:flex; align-items:center; gap:8px }
+.sidefoot .who { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; text-align:center }
+.sidefoot form { margin:0 }
+.content { min-width:0 }
+main { padding:24px }
+.page { max-width:1440px; margin-inline:auto }  /* design 5.2: the whole page (head included) shares one width, centred beyond 1440px */
+.prose, .usertext { max-width:72ch; overflow-wrap:anywhere }
+.cols { display:block }  /* two columns from 1280px (design 5.3); the code order is the one-column order */
+.cols > * { min-width:0 }
+@media (min-width:1280px) {
+  main { padding:32px }
+  .cols { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:0 48px; align-items:start }
+  .cols.wide-first { grid-template-columns:minmax(0,3fr) minmax(0,2fr) }
+}
+main.authmain > .page { display:contents }
 main.authmain { max-width:none; min-height:100vh; display:grid; place-items:center; padding:24px 16px }
-.authbox { width:100%; max-width:540px; padding:44px 46px 34px; margin:0; overflow:visible; box-shadow:0 8px 30px rgba(0,0,0,.08) }
-.authbrand { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:26px }
-.authbrand .logo img { width:72px; height:72px } .authbrand .authname { font-size:36px; font-weight:700; letter-spacing:-.01em }
-.authbox h1 { font-size:18px; text-align:center; margin:0 0 14px }
-.authbox input { width:100%; font-size:17px; min-height:54px; padding:10px 14px; margin-bottom:14px }
-.authbox button.primary { width:100%; min-height:54px; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px }
-.authbox button.primary svg { width:20px; height:20px }
-.authbox .muted { text-align:center; margin:16px 0 0 }
-/* password box (_pwfield.html): the box and the eye button form one control: no gap, one shared border (the button
-   overlaps the box's right edge by 1px), rounded only at the outer corners. The button takes the box's height.
-   Without scripts the button stays hidden and the box takes the whole row. */
-.pwrow { display:flex; align-items:stretch }
-.pwrow input { flex:1 1 0; min-width:0; width:auto; margin:0 }
-.pwrow input:has(+ button.pwtoggle:not([hidden])) { border-top-right-radius:0; border-bottom-right-radius:0 }
-.pwrow input:focus { position:relative; z-index:1 }
-.pwrow button.pwtoggle { flex:none; width:34px; min-height:0; padding:0; margin:0 0 0 -1px; background:var(--bg); border:1px solid var(--line); border-radius:0 6px 6px 0; color:var(--muted); display:flex; align-items:center; justify-content:center }
-.pwrow button.pwtoggle[hidden] { display:none }
-.pwrow button.pwtoggle svg { width:20px; height:20px }
-/* lit like the menu: orange on hover and while the password is visible (then the eye is crossed out) */
-.pwrow button.pwtoggle:hover, .pwrow button.pwtoggle.shown { color:var(--orange) }
-.pwrow button.pwtoggle:focus-visible { outline:2px solid var(--orange); outline-offset:1px }
-.pwtoggle .off { display:none } .pwtoggle.shown .on { display:none } .pwtoggle.shown .off { display:block }
-.authbox .pwrow { margin-bottom:14px } .authbox .pwrow button.pwtoggle { width:54px } .authbox .pwrow button.pwtoggle svg { width:22px; height:22px }
-.bar { height:10px; border-radius:99px; background:var(--line); overflow:hidden; min-width:80px } .bar i { display:block; height:100% }
-button.maint { background:#b42318; border-color:#b42318; color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.2) }
-button.maint.on { background:#12805c; border-color:#12805c }
-.updbar { background:var(--card); border-bottom:1px solid var(--line); padding:8px 16px; text-align:center }
-.maintbar { background:#b42318; color:#fff; padding:8px 16px; text-align:center; font-weight:600 }
-.pill.blocked { color:#fff; background:#b42318; border-color:#b42318 }
-button.dots { background:transparent; color:var(--accent); border:1px solid var(--line); padding:0 7px; min-height:0; line-height:1.3; border-radius:6px; font-weight:700 }
-.cardhead { display:flex; justify-content:space-between; align-items:flex-start; gap:8px } .cardhead h2 { margin:0 0 8px !important }
-.tools { display:flex; gap:6px; flex:none }
-button.icon { position:relative; width:34px; height:34px; min-height:0; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--accent); border:1px solid var(--line); border-radius:8px }
-button.icon:hover { border-color:var(--accent) }
-button.icon:disabled { opacity:.35; cursor:not-allowed; border-color:var(--line) }
-.tools form { margin:0 }
-button.icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round } button.icon svg .bg { fill:var(--card) }
-button.icon .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--ok) }
-.dlghead { display:flex; align-items:center; gap:10px } .dlghead h3 { margin:0; flex:1; font-size:16px } .dlghead form { margin:0 }
-button.switch { width:42px; height:24px; min-height:0; padding:2px; border-radius:99px; background:var(--line); border:1px solid var(--line); display:flex; align-items:center }
-button.switch i { width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .15s } button.switch.on { background:var(--ok); border-color:var(--ok) } button.switch.on i { transform:translateX(18px) }
-.dlghead .x button { width:32px; height:32px; min-height:0; padding:0; display:inline-flex; align-items:center; justify-content:center }
+.maintbar { background:var(--maint); color:#17181D; padding:8px 24px; font-weight:600 }
+.updbar { border-bottom:1px solid var(--line); padding:8px 24px }
+@media (min-width:701px) and (max-width:1000px) {
+  body.app { grid-template-columns:56px minmax(0,1fr) }
+  #sidebar { padding:12px 8px; align-items:center }
+  a.brand { padding:0; margin-bottom:12px } a.brand .bname { display:none }
+  a.navitem { width:40px; height:40px; padding:0; justify-content:center } a.navitem .lbl { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0) }
+  a.navitem .count { position:absolute; top:4px; right:4px; min-width:10px; width:10px; height:10px; padding:0; font-size:0 }
+  .navlabel { height:1px; width:24px; margin:10px 0; background:var(--line); overflow:hidden; font-size:0 }
+  .sidefoot { flex-direction:column; padding-top:8px } .sidefoot .who { display:none }
+  .sidefoot button .t { display:none }
+}
+
+/* ---- page head, tabs ---- */
+.phead { min-height:36px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 16px }
+.ar { display:inline-flex; align-items:center; gap:8px; white-space:nowrap }
+.phead .pactions { display:flex; flex-wrap:wrap; align-items:center; gap:8px } .phead .pactions form { margin:0 }
+.pinfo { margin:4px 0 0; font-size:13px; color:var(--muted) }
+.tabs { display:flex; flex-wrap:wrap; gap:4px 20px; margin:16px 0 20px; border-bottom:1px solid var(--line) }
+.tabs a { display:flex; align-items:center; gap:6px; padding:8px 2px; margin-bottom:-1px; border-bottom:2px solid transparent; color:var(--muted); text-decoration:none }
+.tabs a:hover { color:var(--fg) } .tabs a.on { color:var(--fg); font-weight:600; border-bottom-color:var(--fg) }
+.phead + .tabs, .pinfo + .tabs { margin-top:16px }
+section.blk { margin-bottom:32px } section.blk > h2 { font-size:15px }
+.phead + .cols, .pinfo + .cols, .phead + section, .pinfo + section, .phead + form, .pinfo + form, .phead + .formpage, .pinfo + .formpage { margin-top:20px }
+.pinfo + .tabs, .phead + .tabs { margin-top:16px }
+.blk-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 12px; margin-bottom:8px } .blk-head h2 { margin:0 }
+.note { overflow-wrap:anywhere; font-size:13px; color:var(--muted); margin:6px 0 0 }
+.flash { padding:8px 12px; margin-bottom:16px; border-left:3px solid var(--control); background:var(--card) }
+.flash.ok { border-left-color:var(--fg) } .flash.err { color:var(--err); border-left-color:var(--err) }
+.back { display:inline-flex; align-items:center; gap:6px; margin-bottom:8px; font-size:13px }
+
+/* ---- controls (design 6.2, 6.4) ---- */
+input, select, button, .btn, textarea { font:inherit; color:inherit; background:var(--card); border:1px solid var(--control); border-radius:5px; padding:0 10px; min-height:36px }
+input, select, textarea { max-width:100% }
+textarea { padding:8px 10px; width:100%; min-height:72px }
+input:hover, select:hover, textarea:hover { background:color-mix(in srgb, var(--card) 94%, var(--fg)) }
+input[type=checkbox], input[type=radio] { min-height:0; width:16px; height:16px; padding:0; accent-color:var(--key); vertical-align:-3px }
+input[type=number] { width:90px } input[type=text], input[type=password] { min-width:140px }
+input[aria-invalid=true], .err-field { border-color:var(--err) }
+button, .btn { cursor:pointer; background:var(--key); color:var(--key-fg); border-color:var(--key); text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-align:center; font-weight:600 }
+button:hover, .btn:hover { background:color-mix(in srgb, var(--key) 86%, var(--bg)) }
+button.sec, .btn.sec { background:var(--card); color:var(--fg); border-color:var(--control); font-weight:400 }
+button.sec:hover, .btn.sec:hover { background:color-mix(in srgb, var(--card) 90%, var(--fg)) }
+button.danger, .btn.danger { background:var(--card); color:var(--err); border-color:var(--err); font-weight:400 }
+button.danger:hover, .btn.danger:hover { background:color-mix(in srgb, var(--err) 12%, var(--card)) }
+button:disabled, .btn[aria-disabled=true] { color:var(--muted); background:transparent; border:1px dashed var(--control); cursor:not-allowed; font-weight:400 }
+button.iconbtn, .btn.iconbtn, a.iconbtn { width:36px; padding:0 }
+button.iconbtn { background:var(--card); color:var(--fg); border-color:var(--control); font-weight:400 }
+.row { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center } .row form { margin:0 }
+.actions { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; justify-content:flex-start; margin-top:20px } .actions form { margin:0 }
+form { margin:0 }
 label.check { display:flex; gap:8px; align-items:flex-start; margin:6px 0 }
-dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg); width:min(560px,92vw); padding:20px 22px }
-dialog.wide { width:min(700px,94vw) } dialog .dlghead { margin-bottom:12px } dialog .actions { justify-content:flex-end }
-dialog .dlgfield { margin:14px 0 6px; color:var(--muted); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em }
-dialog .qname { display:inline-block; margin:0 0 10px; padding:3px 12px; border:1px solid var(--line); border-radius:99px; background:var(--bg) }
-dialog::backdrop { background:rgba(0,0,0,.45) }
-dialog .kv { margin:8px 0 14px } dialog .kv dd { overflow-wrap:anywhere }
-.wrap { overflow-wrap:anywhere; word-break:break-word }
-.sg { position:relative; display:inline-block }
-ul.suggest { position:absolute; left:0; right:0; top:100%; margin:2px 0 0; padding:4px 0; list-style:none; background:var(--card); border:1px solid var(--line); border-radius:6px; max-height:240px; overflow:auto; z-index:70; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,.18) }
-ul.suggest li { padding:6px 10px; cursor:pointer } ul.suggest li.on, ul.suggest li:hover { background:var(--bg) } ul.suggest mark { background:none; color:var(--accent); font-weight:700 }
-.copybox { position:relative } .copybox > [data-copy] { padding-right:46px; white-space:pre-wrap; overflow-wrap:anywhere }
-.copybox > .copy { position:absolute; top:6px; right:6px; width:32px; height:32px; min-height:0; padding:0; display:flex; align-items:center; justify-content:center; background:var(--card); color:var(--muted); border:1px solid var(--line); border-radius:6px }
-.copybox > .copy:hover { color:var(--fg) }
-.copybox > .copy svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
-.copybox > .copy .ok { display:none } .copybox > .copy.done .ok { display:block; color:var(--ok) } .copybox > .copy.done .cp { display:none }
-/* audit: alternate rows (a few shades off, enough to follow a line across) and bigger text */
-table.zebra tr:nth-child(even) td { background:color-mix(in srgb, var(--fg) 5%, transparent) }
-table.zebra td { font-size:15.5px } table.zebra td.mono { font-size:14.5px } table.zebra td .pill { font-size:13px }
-table.roomy th, table.roomy td { padding:9px 16px } table.roomy th { font-size:13.5px }
-button.info-lg { background:transparent; color:var(--accent); border:1px solid var(--line); border-radius:50%; width:28px; height:28px; padding:0; min-height:0; font-size:17px; line-height:1; vertical-align:middle }
-.states dt { font-weight:700 } .states dd { margin:0 0 8px }
-.kv { display:grid; grid-template-columns:max-content 1fr; gap:4px 16px } .kv dt { color:var(--muted) } .kv dd { margin:0 }
-/* advanced permissions: a block that opens and closes, its title looks like a button and its arrow turns when open */
-details.adv { margin-top:14px }
-details.adv > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--line); border-radius:6px; font-weight:600; user-select:none }
-details.adv > summary::-webkit-details-marker { display:none }
-details.adv > summary:hover { border-color:var(--accent) }
-details.adv > summary svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .15s }
-details.adv[open] > summary svg { transform:rotate(180deg) }
-details.adv .advbody { margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:8px }
-details.adv fieldset { border:0; padding:0; margin:0; min-width:0 }
-details.adv fieldset:disabled { opacity:.55 }
-details.adv [hidden] { display:none !important }
-.ghostin { position:relative; flex:1; min-width:160px; display:flex }  /* a field with the rest of a suggestion in grey inside it */
-.ghostin input { flex:1; min-width:0 }
-.ghostin .ghost { position:absolute; inset:0; padding:0 9px; display:flex; align-items:center; white-space:pre; overflow:hidden; color:var(--muted); opacity:.7; pointer-events:none }
-.ghostin .ghost .typed { visibility:hidden }
-.rnhint { margin:4px 0 0; min-height:1.2em } .rnhint.err { color:var(--err) }
-ul.formerlist { list-style:none; margin:0; padding:0 } ul.formerlist li { padding:3px 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap } ul.formerlist li .muted { flex:1 1 auto }
-ul.formerlist form { margin:0 } button.forget { width:24px; height:24px; min-height:0; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:6px }
-/* phones: the name and its x stay on one line, the date goes under them */
-@media (max-width:700px) { ul.formerlist li form.forgetform { margin-left:auto } ul.formerlist li .muted { order:3; flex:1 1 100% } }
-/* one row per permission: name and hint on the left, the choice on the right (stacked on phones) */
-.permrow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 16px; padding:12px 0; border-top:1px solid var(--line) }
-.permrow:first-of-type { border-top:0 }
-.permhead { font-weight:600 } .permhead small { display:block; font-weight:400; color:var(--muted); font-size:12px; margin-top:2px }
-.permsub { grid-column:2; display:flex; flex-direction:column; gap:8px; padding:10px 12px; background:var(--bg); border-radius:8px }
-/* segmented control: radio inputs drawn as one row of buttons */
-.seg { display:inline-flex; flex-wrap:wrap; align-self:start; justify-self:start; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card) }
-.seg label { position:relative; margin:0 } .seg label + label { border-left:1px solid var(--line) }
-.seg input, .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none }
-.seg span { display:block; padding:6px 12px; cursor:pointer; white-space:nowrap }
-.seg span:hover { background:var(--bg) }
-.seg input:checked + span { background:var(--accent); color:#fff }
-.seg input:focus-visible + span, .chip input:focus-visible + span { outline:2px solid var(--accent); outline-offset:-2px }
-/* chips: checkboxes drawn as pills (printers, days) */
-.chips { display:flex; flex-wrap:wrap; gap:6px }
-.chip { position:relative; margin:0 }
-.chip > span { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border:1px solid var(--line); border-radius:99px; cursor:pointer; background:var(--card) }
-.chip > span:hover { border-color:var(--accent) }
-.chip input:checked + span { background:var(--accent); border-color:var(--accent); color:#fff }
-.chip input:checked + span::before { content:"✓" }
-.chip i { font-style:normal; opacity:.8 }
-.times { display:flex; flex-wrap:wrap; gap:8px 16px } .times label { display:inline-flex; align-items:center; gap:6px }
-/* form pages (group, user, scan, print): one centred column, a title with an icon, then one row per setting
-   (name and hint on the left, the choice on the right: the same layout as the advanced permissions) */
-.formpage { max-width:760px; margin:0 auto }
-.pagehead { display:flex; align-items:center; gap:14px; margin-bottom:14px }
-.pagehead .pico { flex:none; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card)); border:1px solid color-mix(in srgb, var(--accent) 28%, var(--line)) }
-.pagehead .pico svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round }
-.pagehead h1 { margin:0; font-size:20px } .pagehead p { margin:2px 0 0 }
+.hint { color:var(--muted); font-size:13px }
+.lock { color:var(--muted); display:flex; align-items:flex-start; gap:8px } .lock .ic { margin-top:2px }
+
+/* forms: label on the left (above on a phone), a note under the field only when it prevents a mistake */
 .frows { margin-top:4px }
-.frow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 16px; padding:12px 0; border-top:1px solid var(--line); align-items:center }
+.frow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 24px; padding:12px 0; border-top:1px solid var(--line); align-items:start }
 .frow:first-child { border-top:0 }
 .frow > .fctl { min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:6px }
 .frow > .fctl > .row { gap:8px 12px }
-.formpage .frow input[type=text], .formpage .frow select { min-height:38px; width:100%; max-width:380px }
-/* 15px on a computer; on phones the 16px of the phone block applies (iOS zooms into smaller fields) */
-@media (min-width:701px) { .formpage .frow input[type=text], .formpage .frow select, .formpage .stepper input { font-size:15px } }
-.formpage select { padding-right:6px }
+.permhead { font-weight:600; padding-top:6px } .permhead small { display:block; font-weight:400; color:var(--muted); font-size:13px; margin-top:2px }
+.formpage { max-width:640px } .formpage.fill { max-width:none }  /* the edit pages use the whole page (the guide asked 640px; the user asked for full width) */
+.formpage .frow input[type=text], .formpage .frow select { width:100%; max-width:420px }
 .frow label.check { margin:0 }
-.hint { color:var(--muted); font-size:12.5px }
-button.ico, .btn.ico { display:inline-flex; align-items:center; justify-content:center; gap:8px }
-button.ico svg, .btn.ico svg { width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.frow > .fctl.lock { flex-direction:row; align-items:flex-start }
+.frow .pwrow { width:100%; max-width:420px }
+
+/* segmented choice: the chosen one has a 2px --fg border and bold text (design 6.3) */
+.seg { display:inline-flex; flex-wrap:wrap; align-self:flex-start; justify-self:start }
+.seg label { position:relative; margin:0 0 0 -1px } .seg label:first-child { margin-left:0 }
+.seg input, .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none }
+.seg span { display:flex; align-items:center; min-height:36px; padding:0 14px; border:1px solid var(--control); background:var(--card); cursor:pointer; white-space:nowrap; transition:background .12s }
+.seg label:first-child span { border-radius:5px 0 0 5px } .seg label:last-child span { border-radius:0 5px 5px 0 } .seg label:only-child span { border-radius:5px }
+.seg span:hover { background:color-mix(in srgb, var(--card) 90%, var(--fg)) }
+.seg input:checked + span { position:relative; z-index:1; border-color:var(--fg); box-shadow:inset 0 0 0 1px var(--fg); font-weight:600 }
+.seg input:focus-visible + span, .chip input:focus-visible + span { outline:2px solid var(--fg); outline-offset:2px }
+.seg input:disabled + span { color:var(--muted); border-style:dashed; cursor:not-allowed }
+.seg.compact span { padding:0 12px }
+/* chips: checkboxes drawn as small bordered labels (printers, days) */
+.chips { display:flex; flex-wrap:wrap; gap:6px }
+.chip { position:relative; margin:0 }
+.chip > span { display:inline-flex; align-items:center; gap:4px; min-height:36px; padding:0 12px; border:1px solid var(--control); border-radius:5px; cursor:pointer; background:var(--card) }
+.chip > span:hover { background:color-mix(in srgb, var(--card) 90%, var(--fg)) }
+.chip input:checked + span { border-color:var(--fg); box-shadow:inset 0 0 0 1px var(--fg); font-weight:600 }
+.chip input:checked + span::before { content:"✓" } .chip i { font-style:normal; opacity:.8 }
+button.chip { background:var(--card); color:var(--fg); font-weight:400 }
+.times { display:flex; flex-wrap:wrap; gap:8px 16px } .times label { display:inline-flex; align-items:center; gap:6px }
 /* number with − and + */
-.stepper { display:inline-flex; align-items:stretch; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card) }
-.stepper:focus-within { border-color:var(--accent) }
-.stepper button { width:40px; min-height:38px; padding:0; border:0; border-radius:0; background:transparent; color:var(--muted); font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center }
-.stepper button:hover { background:var(--bg); color:var(--accent) }
-.stepper input[type=number] { width:112px; min-width:0; border:0; border-radius:0; background:var(--card); text-align:center; font-weight:600; -moz-appearance:textfield; appearance:textfield }
+.stepper { display:inline-flex; align-items:stretch; border:1px solid var(--control); border-radius:5px; overflow:hidden; background:var(--card) }
+.stepper:focus-within { border-color:var(--fg) }
+.stepper button { width:36px; min-height:34px; padding:0; border:0; border-radius:0; background:transparent; color:var(--muted); font-size:19px; line-height:1; font-weight:400 }
+.stepper button:hover { background:color-mix(in srgb, var(--card) 88%, var(--fg)); color:var(--fg) }
+.stepper input[type=number] { width:96px; min-width:0; border:0; border-radius:0; background:var(--card); text-align:center; font-weight:600; -moz-appearance:textfield; appearance:textfield }
 .stepper input[type=number]:focus { outline:0 }
 .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
 .stepper input::placeholder { font-weight:400 }
-.seg.compact { gap:1px; background:var(--line) } .seg.compact label { background:var(--card) } .seg.compact label + label { border-left:0 }
-/* password form (settings): one box per line, big text, eye button beside it */
-.pwform .pwrow { margin-bottom:12px }
-.pwform .pwrow input { font-size:17px; min-height:50px; padding:10px 14px }
-.pwform .pwrow button.pwtoggle { width:50px } .pwform .pwrow button.pwtoggle svg { width:22px; height:22px }
-.pwform button.ico { min-height:46px; padding:8px 20px; font-size:15px }
-/* a progress bar that only says "working" */
-.bar.indet { position:relative } .bar.indet i { position:absolute; width:35%; background:var(--accent); animation:indet 1.3s ease-in-out infinite }
-@keyframes indet { 0% { left:-35% } 100% { left:100% } }
-@media (prefers-reduced-motion: reduce) { .bar.indet i { animation:none; width:100% } }
-/* the application's own question window (replaces the browser's confirm box) */
-dialog.confirm { width:min(460px,92vw) }
-dialog.confirm .cico { flex:none; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--card)) }
-dialog.confirm.danger .cico { color:var(--err); background:color-mix(in srgb, var(--err) 14%, var(--card)) }
-dialog.confirm .cico svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
-dialog.confirm [hidden] { display:none !important }  /* label.check is display:flex, which would show the empty tick box */
-dialog.confirm .ctext { white-space:pre-line; margin:0 0 14px; overflow-wrap:anywhere }
-dialog.confirm label.check { padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); margin:0 0 14px; cursor:pointer }
-dialog.confirm button.go.danger-fill { background:var(--err); border-color:var(--err); color:#fff }
-/* the page of the documentation */
-.doctiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; margin:14px 0 0; padding:0; list-style:none }
-.doctiles a { display:flex; align-items:center; justify-content:space-between; gap:10px; height:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg); text-decoration:none }
-.doctiles a:hover { border-color:var(--orange); color:var(--orange) }
-.doctiles svg { flex:none; width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:.6 }
-.faq { margin-top:26px; border:1px solid var(--line); border-radius:10px; background:var(--bg) }
-.faq > summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; font-weight:600 }
-.faq > summary::-webkit-details-marker { display:none }
-.faq > summary svg { flex:none; width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .15s }
-.faq[open] > summary svg { transform:rotate(180deg) }
-.faq .faqbody { padding:0 16px 14px } .faq .faqbody p { margin:0 0 10px }
-.badges { display:flex; flex-wrap:wrap; gap:8px }
-a.badge2 { display:inline-flex; align-items:stretch; border-radius:6px; overflow:hidden; text-decoration:none; font-size:13px; font-weight:600; line-height:1; box-shadow:0 1px 2px rgba(0,0,0,.25) }
-a.badge2 span { display:flex; align-items:center; gap:6px; padding:8px 11px; color:#fff }
-a.badge2 .l { background:#24292f } a.badge2 .r { background:var(--orange) }
-a.badge2 svg { width:16px; height:16px; fill:currentColor }
-a.badge2:hover { filter:brightness(1.12) }
-/* scan and print */
-.dev { display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border:1px solid var(--line); border-radius:99px; background:var(--bg); font-weight:600 }
-.dev::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--ok) }
-.scanlist { list-style:none; margin:0; padding:0; display:grid; gap:8px }
-.scanlist li { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg) }
-.scanlist .st { flex:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff }
-.scanlist .st svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round }
-.scanlist .st.done { background:var(--ok) } .scanlist .st.fail { background:var(--err) } .scanlist .st.run { background:var(--accent) }
-.scanlist .what { flex:1; min-width:0; overflow-wrap:anywhere } .scanlist .what small { display:block; color:var(--muted) }
-.scanlist .st.run svg { animation:spin 1.2s linear infinite } @keyframes spin { to { transform:rotate(360deg) } }
-@media (prefers-reduced-motion: reduce) { .scanlist .st.run svg { animation:none } }
-/* tables marked .stack-md become stacked cards already below 1000px (too many columns for a tablet) */
+/* switch: for preferences that act at once and can be undone (design 6.3) */
+button.switch { box-sizing:border-box; flex:none; justify-content:flex-start; width:44px; height:24px; min-height:0; padding:3px; border-radius:99px; background:var(--card); border:1px solid var(--control); display:flex; align-items:center; transition:background .12s }
+button.switch i { display:block; flex:none; width:16px; height:16px; border-radius:50%; background:var(--control); transition:transform .12s, background .12s }
+button.switch.on { background:var(--key); border-color:var(--key) } button.switch.on i { transform:translateX(20px); background:var(--key-fg) }
+button.switch:hover { background:var(--card) } button.switch.on:hover { background:var(--key) }
+/* the password box and its eye button are one control */
+.pwrow { display:flex; align-items:stretch }
+.pwrow input { flex:1 1 0; min-width:0; width:auto; margin:0 }
+.pwrow input:has(+ button.pwtoggle:not([hidden])) { border-top-right-radius:0; border-bottom-right-radius:0 }
+.pwrow input:focus-visible { position:relative; z-index:1 }
+.pwrow button.pwtoggle { flex:none; width:36px; min-height:0; padding:0; margin:0 0 0 -1px; background:var(--card); border:1px solid var(--control); border-radius:0 5px 5px 0; color:var(--muted); display:flex; align-items:center; justify-content:center; font-weight:400 }
+.pwrow button.pwtoggle:hover { color:var(--fg) } .pwrow button.pwtoggle[hidden] { display:none }
+.pwtoggle .off { display:none } .pwtoggle.shown .on { display:none } .pwtoggle.shown .off { display:block }
+.pwform .pwrow, .authbox .pwrow { margin-bottom:12px }
+/* a field with the rest of a suggestion in grey inside it */
+.ghostin { position:relative; flex:1; min-width:160px; display:flex } .ghostin input { flex:1; min-width:0 }
+.ghostin .ghost { position:absolute; inset:0; padding:0 11px; display:flex; align-items:center; white-space:pre; overflow:hidden; color:var(--muted); opacity:.7; pointer-events:none }
+.ghostin .ghost .typed { visibility:hidden }
+.rnhint { margin:4px 0 0; min-height:1.2em; font-size:13px } .rnhint.err { color:var(--err) }
+.sg { position:relative; display:inline-block }
+ul.suggest { position:absolute; left:0; right:0; top:100%; margin:2px 0 0; padding:4px 0; list-style:none; background:var(--card); border:1px solid var(--control); border-radius:6px; max-height:240px; overflow:auto; z-index:70; min-width:180px }
+ul.suggest li { padding:6px 10px; cursor:pointer } ul.suggest li.on, ul.suggest li:hover { background:var(--bg) } ul.suggest mark { background:none; color:var(--fg); font-weight:700 }
+
+/* ---- status: an icon and a word, no pill (design 6.7) ---- */
+.st { display:inline-flex; align-items:center; gap:5px; white-space:nowrap }
+.st .ic { width:14px; height:14px; vertical-align:0 }
+.st .w { display:inline-block } .st .w::first-letter { text-transform:uppercase }
+.s-completed, .s-canceled, .s-ok, .s-active, .s-approved, .s-idle, .s-present { color:var(--muted) }
+.s-accepted, .s-printing { color:var(--fg); font-weight:600 }
+.s-held, .s-pending, .s-disabled, .s-stale, .s-never, .s-warn { color:var(--warn) }
+.s-denied, .s-failed, .s-rejected, .s-revoked, .s-expired, .s-ended, .s-missing, .s-modified, .s-error { color:var(--err) }
+/* properties (USB, Scanner, Admin, Monouso…): a small bordered label */
+.pill { display:inline-block; padding:0 6px; border:1px solid var(--control); border-radius:3px; font-size:12px; line-height:18px; color:var(--muted); white-space:nowrap; vertical-align:1px }
+.pill + .pill, .pill + .muted, .pill + .st { margin-left:6px }
+.pill { margin-inline-start:6px } .pr-tags .pill, .pr-tags .pill + .pill { margin-left:0 }
+.pill.me { color:var(--fg) }
+.badge { background:var(--brand-strong); color:#fff; border-radius:99px; padding:0 7px; font-size:12px }
+.extra { color:inherit } .inherited { color:inherit }
+.dot-diff { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--fg); margin-left:4px; vertical-align:2px }
+
+/* ---- tables (only where the data really is a table) ---- */
+table { border-collapse:collapse; width:100% }
+th, td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:middle }
+th { color:var(--muted); font-weight:600; font-size:13px }
+.kv { display:grid; grid-template-columns:max-content 1fr; gap:4px 24px; margin:0 } .kv dt { color:var(--muted) } .kv dd { margin:0; overflow-wrap:anywhere }
 @media (max-width:1000px) {
   table.stack-md, table.stack-md tbody, table.stack-md tr { display:block; width:100% }
   table.stack-md td { display:block; width:100% }
   table.stack-md thead, table.stack-md tr:first-child:has(th) { display:none }
-  table.stack-md tr { border:1px solid var(--line); border-radius:8px; margin-bottom:10px; padding:4px 0 }
-  /* a cell is "name | content": app.js puts the content of every cell with a name into one .cv box, so
-     any number of elements (text, notes, buttons, dialogs) stay together in the second column */
-  table.stack-md td { border:0; padding:4px 10px }
+  table.stack-md tr { border-bottom:1px solid var(--line); padding:6px 0 }
+  table.stack-md td { border:0; padding:3px 0 }
   table.stack-md td[data-l] { display:grid; grid-template-columns:30% minmax(0,1fr); gap:0 12px; align-items:baseline }
-  table.stack-md td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:12px; text-transform:uppercase; overflow-wrap:anywhere }
+  table.stack-md td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:13px; overflow-wrap:anywhere }
 }
-/* narrow windows and tablets: logo and the round buttons on the first row, the menu under them */
-@media (max-width:1000px) { a.brand { order:1; margin-right:auto } .hactions { order:2 } nav { order:3; width:100% } .spacer { display:none } }
-/* phones: bigger touch targets, 16px inputs (iOS zooms below that), tables become stacked cards when marked .stack */
+
+/* ---- lists: two lines per row, 1px separators (design 6.6) ---- */
+ul.rows { list-style:none; margin:0; padding:0; border-top:1px solid var(--line) }
+ul.rows > li { border-bottom:1px solid var(--line); background:var(--card) }
+ul.plain > li { background:none }
+.r2 { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 16px; align-items:center; padding:10px 14px }
+.r2 .l1 { font-weight:600; overflow-wrap:anywhere } .r2 .l2 { grid-column:1; font-size:13px; color:var(--muted); overflow-wrap:anywhere }
+.r2 .end { grid-row:1 / span 2; grid-column:2; display:flex; align-items:center; gap:8px }
+.r2 .l2 .ln { display:block }
+.r2 .l2 .ln + .ln { margin-top:2px }
+.r2 .l2 .ln b { font-weight:600; color:var(--fg) }
+.r2 .l2 .ln.quote { padding-inline-start:10px; border-inline-start:2px solid var(--line) }
+@media (max-width:700px) {  /* long rows: the status and buttons go under the text instead of squeezing it */
+  .r2.wide { grid-template-columns:minmax(0,1fr) }
+  .r2.wide .end { grid-row:auto; grid-column:1; flex-wrap:wrap; margin-top:6px }
+}
+.r2 .l1 > a { color:var(--fg); text-decoration:none } .r2 .l1 > a:hover { text-decoration:underline }
+a.r2 { color:var(--fg); text-decoration:none } a.r2:hover { background:color-mix(in srgb, var(--fg) 5%, transparent) }
+/* a row that opens: <details><summary>…</summary> detail </details> */
+ul.rows details > summary { list-style:none; cursor:pointer } ul.rows details > summary::-webkit-details-marker { display:none }
+ul.rows details > summary:hover { background:color-mix(in srgb, var(--fg) 5%, transparent) }
+ul.rows details > summary .chev { transition:none } ul.rows details[open] > summary .chev { transform:rotate(180deg) }
+ul.rows details > .detail { padding:4px 14px 14px; border-top:1px dashed var(--line) }
+.detail .kv { margin-top:10px }
+.detail .actions { margin-top:12px }
+.dayhead { margin:20px 0 6px; font-size:13px; font-weight:600; color:var(--muted) } .dayhead:first-child { margin-top:0 }
+.chev { width:16px; height:16px; color:var(--muted) }
+
+/* ⋯ menu: a <details>, works without scripts */
+details.menu { position:relative; display:inline-block }
+details.menu > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:36px; min-height:36px; border:1px solid var(--control); border-radius:5px; background:var(--card); color:var(--fg) }
+details.menu > summary::-webkit-details-marker { display:none }
+details.menu > summary:hover { background:color-mix(in srgb, var(--card) 90%, var(--fg)) }
+details.menu .menulist { position:absolute; right:0; top:calc(100% + 4px); z-index:60; min-width:220px; padding:4px; background:var(--card); border:1px solid var(--control); border-radius:6px }
+details.menu .menulist form { margin:0 }
+.menulist .mi { display:block; width:100%; min-height:0; padding:8px 10px; border:0; border-radius:4px; background:transparent; color:var(--fg); text-align:left; text-decoration:none; font-weight:400; justify-content:flex-start }
+.menulist .mi:hover { background:color-mix(in srgb, var(--fg) 8%, transparent) }
+.menulist .mi.danger { color:var(--err) } .menulist .mi small { display:block; color:var(--muted) }
+.menulist .mi:disabled { color:var(--muted); background:transparent; border:0 }
+
+/* a short form that opens in place under its button (<details>: no script needed) */
+details.newform { margin:0 0 20px }
+details.newform > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; min-height:36px; padding:0 14px; border-radius:5px; background:var(--key); color:var(--key-fg); border:1px solid var(--key); font-weight:600 }
+details.newform > summary::-webkit-details-marker { display:none }
+details.newform[open] > summary { background:var(--card); color:var(--fg); border-color:var(--control); font-weight:400 }
+details.newform > form { max-width:640px; margin-top:16px; padding-top:4px; border-top:1px solid var(--line) }
+
+/* ---- objects with a state (printers): the card ---- */
+.card { background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px; margin-bottom:12px }
+.card > h2:first-child { margin-top:0 }
+.cardhead { display:flex; justify-content:space-between; align-items:flex-start; gap:8px } .cardhead h2 { margin:0 }
+.tools { display:flex; gap:6px; flex:none } .tools form { margin:0 }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px 24px } .grid2 > div { min-width:0 }
+
+/* ---- quantities (design 6.8): one tick per unit ---- */
+.ticks { display:inline-flex; flex-wrap:wrap; vertical-align:middle }
+.ticks { gap:3px }
+.ticks i { display:block; width:7px; height:16px; border:1px solid var(--control); border-radius:1px } .ticks i.used { background:var(--control) }
+.ticks.out i { border-color:var(--err); background:var(--err) }
+.quota { display:grid; grid-template-columns:90px 200px 1fr; gap:6px 16px; align-items:center; margin:0 0 6px }
+.quota .left { font-size:15px } .quota .left b { font:600 20px/1 var(--head); color:var(--fg) } .quota .left.out { color:var(--err) } .quota .left.out b { color:var(--err) }
+progress { -webkit-appearance:none; appearance:none; width:200px; max-width:min(100%,320px); height:12px; border:1px solid var(--control); border-radius:1px; background:var(--card); overflow:hidden; vertical-align:middle }
+progress::-webkit-progress-bar { background:var(--card) } progress::-webkit-progress-value { background:var(--control) } progress::-moz-progress-bar { background:var(--control) }
+progress.out::-webkit-progress-value { background:var(--err) } progress.out::-moz-progress-bar { background:var(--err) }
+svg.level { display:block; width:100%; max-width:320px; height:12px } svg.level rect.box { fill:none; stroke:var(--control); stroke-width:1 }
+.level-row { margin:0 0 10px; max-width:320px } .level-row .row { justify-content:space-between; flex-wrap:nowrap } .level-row b.low { color:var(--err) }
+.bar { height:10px; border:1px solid var(--control); background:var(--card); min-width:80px; border-radius:1px; overflow:hidden } .bar i { display:block; height:100% }
+.bar.indet { position:relative } .bar.indet i { position:absolute; width:35%; background:var(--fg); animation:indet 1.3s ease-in-out infinite }
+@keyframes indet { 0% { left:-35% } 100% { left:100% } }
+
+/* ---- dialogs (design 6.9): for confirmations and short forms, never to show information ---- */
+dialog { border:1px solid var(--control); border-radius:6px; background:var(--card); color:var(--fg); width:min(540px,92vw); padding:20px 22px }
+dialog.wide { width:min(700px,94vw) } dialog::backdrop { background:rgba(0,0,0,.45) }
+.dlghead { display:flex; align-items:center; gap:10px; margin-bottom:10px } .dlghead h3 { margin:0; flex:1; font-size:17px }
+dialog .actions { justify-content:flex-end }
+dialog .dlgfield { margin:14px 0 6px; color:var(--muted); font-size:13px; font-weight:600 }
+dialog .qname { display:inline-block; margin:0 0 10px; padding:2px 10px; border:1px solid var(--control); border-radius:3px; background:var(--bg) }
+dialog .kv dd { overflow-wrap:anywhere }
+dialog.confirm { width:min(460px,92vw) } dialog.confirm [hidden] { display:none !important }
+dialog.confirm .ctext { white-space:pre-line; margin:0 0 14px; overflow-wrap:anywhere }
+dialog.confirm label.check { padding:10px 12px; border:1px solid var(--control); border-radius:5px; background:var(--bg); margin:0 0 14px; cursor:pointer }
+dialog.confirm button.go.danger-fill { background:var(--err); border-color:var(--err); color:var(--card) }
+
+/* ---- copy box, secrets ---- */
+.copybox { position:relative } .copybox > [data-copy] { padding-right:46px; white-space:pre-wrap; overflow-wrap:anywhere }
+.copybox > .copy { position:absolute; top:6px; right:6px; width:32px; height:32px; min-height:0; padding:0; display:flex; align-items:center; justify-content:center; background:var(--card); color:var(--muted); border:1px solid var(--control); border-radius:5px }
+.copybox > .copy:hover { color:var(--fg) } .copybox > .copy svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.copybox > .copy .ok { display:none } .copybox > .copy.done .ok { display:block } .copybox > .copy.done .cp { display:none }
+.secret { font:600 16px var(--mono); padding:12px; border:1px solid var(--control); border-radius:5px; word-break:break-all; user-select:all; background:var(--card) }
+.secret.cb-fs13 { font-size:13px } .secret.cb-fs15 { font-size:15px }
+
+/* ---- login and first-start pages (design 4.1) ---- */
+.authbox { width:100%; max-width:420px }
+.authbox.sheet { padding:32px 28px 40px }
+.authbrand { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:20px }
+.authbrand .logo img { width:48px; height:48px } .authbrand .authname { font:600 28px/1 var(--head) }
+.authbox h1 { font-size:20px; text-align:center; margin:0 0 16px }
+.authbox label.f { display:block; font-size:13px; font-weight:600; margin:0 0 4px }
+.authbox input, .authbox select { width:100%; min-height:44px; margin-bottom:12px; font-size:16px }
+.authbox button.primary { width:100%; min-height:44px; font-size:16px; margin-top:4px }
+.authbox .muted { margin:16px 0 0; text-align:center }
+.authbox .pwrow input { margin:0 }  /* beats ".authbox input": a bottom margin would make the eye button taller than the box */
+.authbox .pwrow button.pwtoggle { width:44px; min-height:44px }
+.authbox .muted.su-note { text-align:left; margin:0 0 14px }
+
+/* ---- documentation list, FAQ ---- */
+.doctiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:0 32px; margin:14px 0 0; padding:0; list-style:none }
+.doctiles li { display:flex } .doctiles li > a { flex:1 }
+.doctiles a { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line); color:var(--fg); text-decoration:none }
+.doctiles a:hover { background:color-mix(in srgb, var(--fg) 5%, transparent) } .doctiles svg { color:var(--muted) }
+.faq { margin-top:26px; border-top:1px solid var(--line) }
+.faq > summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 0; font-weight:600 }
+.faq > summary::-webkit-details-marker { display:none } .faq[open] > summary .chev { transform:rotate(180deg) }
+.faq .faqbody { padding:0 0 14px } .faq .faqbody p { margin:0 0 10px }
+.badges { display:flex; flex-wrap:wrap; gap:8px }
+a.badge2 { display:inline-flex; align-items:stretch; border-radius:5px; overflow:hidden; text-decoration:none; font-size:13px; font-weight:600; line-height:1 }
+a.badge2 span { display:flex; align-items:center; gap:6px; padding:8px 11px; color:#fff } a.badge2 .l { background:#24292f } a.badge2 .r { background:var(--key); color:var(--key-fg) }
+a.badge2 svg { width:16px; height:16px; fill:currentColor }
+
+details.more { margin:8px 0 0; border-top:1px solid var(--line) }
+details.more > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px; padding:12px 0; font-weight:600 }
+details.more > summary::-webkit-details-marker { display:none }
+details.more[open] > summary .chev { transform:rotate(180deg) }
+/* advanced permissions: one row per permission, name and hint on the left, the choice on the right */
+details.adv .advbody { padding:0 0 8px } details.adv fieldset { border:0; padding:0; margin:0; min-width:0 } details.adv fieldset:disabled { opacity:.55 }
+details.adv [hidden] { display:none !important }
+.permrow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 24px; padding:12px 0; border-top:1px solid var(--line) }
+.permrow:first-of-type { border-top:0 }
+.permsub { grid-column:2; display:flex; flex-direction:column; gap:8px; padding:10px 12px; border:1px solid var(--line); border-radius:5px }
+@media (max-width:700px) { .permrow { grid-template-columns:1fr } .permsub { grid-column:1 } }
+.ue-other { margin-top:32px; padding-top:20px; border-top:1px solid var(--line) }
+.ue-grants { margin-top:12px }
+
+/* ---- scan and print ---- */
+.dev { display:inline-flex; align-items:center; gap:8px; padding:0 10px; min-height:36px; border:1px solid var(--control); border-radius:5px; font-weight:600 }
+.scanlist { list-style:none; margin:0; padding:0; border-top:1px solid var(--line) }
+.scanlist li { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line) }
+.scanlist .what { flex:1; min-width:0; overflow-wrap:anywhere } .scanlist .what small { display:block; color:var(--muted) }
+.scanlist .st .ic.spin { animation:spin 1.2s linear infinite } @keyframes spin { to { transform:rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) { * { transition:none !important } .bar.indet i { animation:none; width:100% } .scanlist .st .ic.spin { animation:none } }
+
+/* ---- the phone: a bar at the bottom, 44px targets, 16px fields (design 5, modifiche 2.3) ---- */
 @media (max-width:700px) {
-  body { font-size:15px } main { padding:10px } .card { padding:12px; border-radius:8px }
-  .authbox { padding:28px 20px 22px } .authbrand .logo img { width:56px; height:56px } .authbrand .authname { font-size:30px }
-  /* top row: logo and name on the left, the three icon buttons on the right; the menu below, wrapped so every entry is visible */
-  header { padding:8px 10px; gap:6px 10px } .spacer { display:none }
-  a.brand { order:1; margin-right:auto } .hactions { order:2 } nav { order:3; width:100%; flex-wrap:wrap; gap:2px }
-  /* with scripts: logo, bell and a menu button on one row; the menu, help, maintenance and log out open under the button.
-     The buttons of .hactions become direct children of the header (display:contents) so they can be ordered one by one. */
-  header.navjs .navtoggle { display:inline-flex; order:3 }
-  header.navjs .hactions { display:contents }
-  header.navjs .hactions > .bell { order:2 }
-  header.navjs .hactions > :not(.bell) { order:5; display:none }
-  header.navjs nav { order:4; display:none }
-  header.navjs.open nav { display:flex }
-  header.navjs.open .hactions > :not(.bell) { display:block }
-  header.navjs.open .hactions > a.helpbtn { display:inline-flex }
-  nav a { padding:6px 9px }
-  input, select, button, .btn, textarea { font-size:16px; min-height:42px; padding:8px 10px }
-  .sg { display:block; width:100% }
-  button.dots { min-height:30px; padding:0 9px } .copybox > .copy { min-height:0; width:36px; height:36px; padding:0 } .iconbtn { width:42px; height:42px; min-height:42px }
+  body.app { display:block; padding-bottom:64px }
+  #sidebar { position:fixed; top:auto; bottom:0; left:0; right:0; height:auto; z-index:100; padding:0; flex-direction:row; border-right:0; border-top:1px solid var(--line); background:var(--bg); overflow:visible }
+  a.brand, .navlabel, .navrule, .sidefoot { display:none }
+  #sidebar nav { flex-direction:row; width:100%; justify-content:space-around; gap:0 }
+  a.navitem { display:none; flex:1; flex-direction:column; justify-content:center; gap:2px; min-height:56px; padding:6px 2px; font-size:12px; border-radius:0; text-align:center }
+  a.navitem .lbl { flex:none; max-width:100% }
+  body.role-user a.navitem.bar-u, body.role-admin a.navitem.bar-a { display:flex }
+  a.navitem .count { position:absolute; top:4px; left:calc(50% + 4px); min-width:18px; height:18px; font-size:11px; line-height:18px; padding:0 4px }
+  a.navitem.on { --cut:0px; background:var(--key) } a.navitem.on::before { display:none }
+  main { padding:16px }
+  .maintbar, .updbar { padding:8px 16px }
+  input, select, button, .btn, textarea { font-size:16px; min-height:44px }
+  input[type=checkbox], input[type=radio] { min-height:0; width:20px; height:20px }
   input[type=text], input[type=password], input[type=number], select { width:100%; min-width:0 }
-  input[type=checkbox], input[type=radio] { min-height:0; padding:0 }  /* ticks keep their own size, not the 42px of the fields */
-  .pwrow button.pwtoggle { width:42px }  /* square next to the 42px boxes */
-  .row { gap:12px } .row > * { flex:1 1 auto } .row form { flex:1 1 auto } .row button { width:100% }
-  /* small controls and labels keep their own size inside a row (only fields, forms and text buttons share the width) */
-  .row > .pill, .row > .badge, .row > .muted, .row > b, .row > .dev { flex:none }
-  .row button.switch { flex:none; width:42px }
-  .row button.dots, .row button.icon, .row button.info-lg, .row button.forget { flex:none; width:auto }
-  .row button.icon { width:34px }
-  .row button.chip { flex:0 1 auto; width:auto }  /* preset buttons wrap side by side */
-  .row > .stepper { flex:none }
-  .actions { gap:12px } .actions > *, .actions form { flex:1 1 100% } .actions button, .actions .btn { width:100%; text-align:center } dialog { padding:16px 16px }
+  details.menu > summary { min-height:44px; width:44px } button.iconbtn, a.iconbtn { width:44px }
+  .sheet { padding:20px 20px 28px } .authbox.sheet { padding:24px 20px 32px }
+  .actions > *, .actions form { flex:1 1 100% } .actions button, .actions .btn { width:100% }
+  dialog .actions { flex-direction:column-reverse }
+  .frow { grid-template-columns:1fr; gap:6px } .frow > .fctl { align-items:stretch } .permhead { padding-top:0 }
+  .frow > .fctl > .stepper, .frow > .fctl > .seg { align-self:flex-start }
+  .seg { display:flex; flex-direction:column; width:100% } .seg label { margin:-1px 0 0 } .seg label:first-child { margin-top:0 }
+  .seg label span { border-radius:0 !important } .seg label:first-child span { border-radius:5px 5px 0 0 !important } .seg label:last-child span { border-radius:0 0 5px 5px !important }
+  .seg.compact { flex-direction:row; width:auto } .seg.compact label { margin:0 0 0 -1px } .seg.compact label span { border-radius:0 !important } .seg.compact label:first-child span { border-radius:5px 0 0 5px !important } .seg.compact label:last-child span { border-radius:0 5px 5px 0 !important }
+  .stepper button { width:44px; min-height:42px }
+  .pwrow button.pwtoggle { width:44px }
+  .row > * { flex:1 1 auto } .row .stepper, .row button.switch, .row .pill, .row .muted, .row details.menu { flex:none }
+  .quota { grid-template-columns:minmax(70px,max-content) minmax(0,1fr) } .quota > :nth-child(1) { grid-column:1; grid-row:1 } .quota > :nth-child(3) { grid-column:2; grid-row:1 } .quota > :nth-child(2) { grid-column:1 / -1; grid-row:2 }
+  .kv { grid-template-columns:1fr } .kv dt { margin-top:6px }
+  .tabs { overflow-x:auto; overflow-y:hidden; flex-wrap:nowrap; gap:20px } .tabs a { white-space:nowrap; margin-bottom:0 }
   table.stack, table.stack tbody, table.stack tr { display:block; width:100% }
   table.stack td { display:block; width:100% }
   table.stack thead, table.stack tr:first-child:has(th) { display:none }
-  table.stack tr { border:1px solid var(--line); border-radius:8px; margin-bottom:10px; padding:4px 0 }
-  table.stack td { border:0; padding:4px 10px }
+  table.stack tr { border-bottom:1px solid var(--line); padding:6px 0 }
+  table.stack td { border:0; padding:3px 0 }
   table.stack td[data-l] { display:grid; grid-template-columns:38% minmax(0,1fr); gap:0 12px; align-items:baseline }
-  table.stack td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:12px; text-transform:uppercase; overflow-wrap:anywhere }
-  table.stack.howto td[data-l] { grid-template-columns:32% minmax(0,1fr) }
-  table.stack td[data-l]:has(> .cv > form.decide) { grid-template-columns:1fr; gap:6px }  /* a decision form needs the whole width: name above it */
-  .kv { grid-template-columns:1fr } .kv dt { margin-top:6px }
-  details.adv > summary { width:100%; justify-content:space-between; box-sizing:border-box } details.adv .advbody { padding:10px }
-  .permrow { grid-template-columns:1fr } .permsub { grid-column:1 }
-  .seg { display:flex; flex-direction:column; width:100% } .seg label + label { border-left:0; border-top:1px solid var(--line) }
-  .seg span { padding:10px 12px; white-space:normal }
-  .chip > span { padding:8px 14px } .times input[type=time] { width:auto }
-  .frow { grid-template-columns:1fr; gap:8px } .frow > .fctl { align-items:stretch }
-  .formpage .frow input[type=text], .formpage .frow select { max-width:none }
-  .frow > .fctl > .stepper, .frow > .fctl > .seg.compact { align-self:flex-start }
-  .stepper button { width:40px; min-height:40px } .seg.compact { flex-direction:row; width:auto } .seg.compact label { flex:1 1 auto; text-align:center }
-  .pagehead .pico { width:40px; height:40px } .doctiles { grid-template-columns:1fr }
+  table.stack td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:13px; overflow-wrap:anywhere }
+  table.stack td[data-l]:has(> .cv > form.decide) { grid-template-columns:1fr; gap:6px }
+  .mobile-more { display:block }
 }
-.cv { min-width:0 }
-/* classes that replace the style="" attributes of the shared templates */
-.ar { display:inline-flex; align-items:center; gap:8px; vertical-align:middle }  /* autorefresh.html */
-.authbox .muted.su-note { text-align:left; margin:0 0 14px }  /* setup.html */
-.on-actions { margin-top:12px }  /* _own_notices.html */
-.secret.cb-fs13 { font-size:13px } .secret.cb-fs15 { font-size:15px }  /* macros.html copybox(): size argument */
+.mobile-more { display:none }
+
+@media (forced-colors: active) { .ticks i.used, .ticks.out i { background:CanvasText } progress::-webkit-progress-value, progress::-moz-progress-bar { background:CanvasText } }
+/* forced colours: the fills are replaced by the system's, so what marks a choice must also be a border */
+@media (forced-colors: active) {
+  a.navitem.on { border:2px solid CanvasText } .seg input:checked + span, .chip input:checked + span { border:2px solid Highlight }
+  button { border:1px solid ButtonText }
+}

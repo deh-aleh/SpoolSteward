@@ -1,0 +1,11 @@
+{# The tabs of a section: every tab is a link to a page of its own, so they work without scripts. Needs `tabset` and `tab`
+   (the current one); `tabcount` = {tab: number} is optional. #}
+{% set sets = {
+  'log': [('/admin/jobs', 'jobs', _("Prints and scans")), ('/admin/actions', 'actions', _("Admin actions")), ('/admin/report', 'report', _("Report")), ('/admin/archive', 'archive', _p("menu", "Archive"))],
+  'people': [('/admin/users', 'users', _("Users")), ('/admin/groups', 'groups', _("Groups")), ('/admin/registration', 'registration', _("Registration"))],
+  'requests': [('/admin/requests', 'pending', _("Waiting")), ('/admin/requests/grants', 'grants', _("Grants")), ('/admin/requests/history', 'history', _("History"))],
+  'notices': [('/admin/notices?tab=own', 'own', _("For you")), ('/admin/notices', 'gateway', _("Gateway"))],
+} %}
+<nav class="tabs" aria-label="{{ _t('Sections') }}">
+  {% for href, key, label in sets[tabset] %}<a href="{{ href }}"{% if key == tab %} class="on" aria-current="page"{% endif %}>{{ label }}{% if tabcount and tabcount.get(key) %} <span class="count">{{ tabcount[key] }}</span>{% endif %}</a>{% endfor %}
+</nav>

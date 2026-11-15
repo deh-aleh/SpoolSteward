@@ -114,7 +114,7 @@ async def test_the_owner_sees_their_notices_and_nobody_else_does(boss):
         page = await ann.get("/me/notices")
         assert page.status_code == 200 and "my laptop" in page.text and "revoked your print key" in page.text
         assert notices.unseen_count(boss.sm, uid(boss, "ann"), own=True) == 0              # opening the list = seen
-        assert 'class="bell' in (await ann.get("/me")).text                                # ordinary users have the bell
+        assert '<span class="lbl">Notices</span>' in (await ann.get("/me")).text                                # ordinary users have the bell
         assert (await ann.get("/admin/notices")).status_code in (303, 403)                  # the administrators' list is not theirs
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         assert (await ann.post(f"/me/notices/{nid}/dismiss", data={"csrf_token": token})).status_code == 303

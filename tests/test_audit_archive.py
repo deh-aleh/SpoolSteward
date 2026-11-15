@@ -313,7 +313,7 @@ async def admin(world):          # own fixture on purpose: built on `world` (arc
 
 async def test_the_audit_page_links_to_the_archive_and_says_older_rows_are_there(admin):
     html = (await admin.get("/admin/jobs")).text
-    assert '<a href="/admin/archive">Archive (1)</a>: the oldest prints no longer appear in this table.' in html
+    assert '<a href="/admin/archive">Archive (1)</a>' in html and "Older entries are in the Archive." in html
     assert "jb-warn" not in html
     assert '<a href="/admin/archive">Archive</a>' not in html.split("<main")[0]    # no longer a top menu item
     assert "recent-0.pdf" in html and "report-0.pdf" not in html                  # the old rows left the table
@@ -331,7 +331,7 @@ async def test_the_archive_page_shows_both_paths_and_the_checksum(admin, monkeyp
 async def test_an_archive_can_be_read_searched_and_paged_in_the_portal(admin):
     page1 = (await admin.get(f"/admin/archive/{admin.aid}/view")).text
     assert "report-0.pdf" in page1 and "report-99.pdf" in page1 and "report-100.pdf" not in page1
-    assert "Page 1 / 3" in page1
+    assert "Page 1 of 3" in page1
     assert "report-249.pdf" in (await admin.get(f"/admin/archive/{admin.aid}/view?page=3")).text
     hit = (await admin.get(f"/admin/archive/{admin.aid}/view?q=report-17.pdf")).text
     assert "report-17.pdf" in hit and "1 results" in hit and "report-18.pdf" not in hit
@@ -347,8 +347,8 @@ async def test_the_search_box_of_an_archive_starts_empty_and_keeps_the_search(ad
 
 async def test_an_archived_print_has_the_columns_of_the_audit_page(admin):
     page1 = (await admin.get(f"/admin/archive/{admin.aid}/view")).text
-    heads = re.findall(r"<th>(.*?)</th>", page1)
-    assert heads == ["No.", "When", "User", "Device", "Action", "State", "Pg.", "File", "Notes"]
+    assert page1.count('<li class="jr">') == 100 and 'class="jsum with-user"' in page1             # one row per print, which opens
+    assert "<dt>Device</dt>" in page1 and "<dt>No.</dt>" in page1 and "<dt>When</dt>" in page1
     assert "/cancel" not in page1                                     # no "cancel this job" form in an archive
 
 

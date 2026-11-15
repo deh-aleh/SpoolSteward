@@ -167,8 +167,8 @@ async def test_without_radius_only_local_accounts_exist(portal):
     assert user_row(portal, "rad") is None
     await portal_login(portal, "boss", GOOD)
     token = await csrf_of_page(portal, "/admin/users")
-    html = (await portal.get("/admin/users")).text
-    assert "Pre-register a RADIUS user" not in html and "New local user" in html
+    html = (await portal.get("/admin/users/new")).text
+    assert "RADIUS" not in html and 'name="password"' in html and 'name="kind"' not in html     # no choice to make: local accounts only
     await portal.post("/admin/users", data={"username": "x", "csrf_token": token})
     assert user_row(portal, "x") is None                                              # no provider to pre-register for
 
@@ -418,10 +418,10 @@ async def test_list_is_read_only_and_shows_grants_with_a_plus(admin):
         s.commit()
     page = (await admin.get("/admin/users")).text
     assert "built-in method" not in page and "0 active" in page          # jinja: a dict key named "keys" is the method
-    assert "Edit" in page and "Save" not in page and "<select name=\"group_id\" form" not in page
-    row = re.search(r"<tr>\s*<td data-l=\"User\"><b>fio</b>.*?</tr>", page, re.S).group(0)
-    assert "+20" in row and 'class="extra"' in row and ">50<" in row
-    assert "Origin" not in re.search(r"<tr>.*?</tr>", page, re.S).group(0)         # origin moved to the edit page
+    assert f'href="/admin/users/{uid}/edit"' in page and "Save" not in page and "<select name=\"group_id\" form" not in page
+    row = re.search(r'<a class="urow"[^>]*>(?:(?!</a>).)*<b>fio</b>.*?</a>', page, re.S).group(0)      # the whole row leads to the edit page
+    assert "50 + 20 granted" in row and "per month" in row and ">0 of 70 per month<" not in row
+    assert "Origin" not in page                                                      # origin moved to the edit page
 
 
 async def test_edit_page_carries_every_field_including_origin_and_delete(admin):
@@ -562,9 +562,9 @@ async def test_local_and_radius_users_can_be_created_in_a_chosen_group(portal, a
         s.add(Group(name="teachers"))
         s.commit()
     csrf = await csrf_of_page(portal, "/admin/users")
-    page = (await portal.get("/admin/users")).text
-    forms = re.findall(r'<select name="group_id">(.*?)</select>', page, re.S)
-    assert len(forms) == 2                                           # local form and RADIUS form
+    page = (await portal.get("/admin/users/new")).text
+    forms = re.findall(r'<select name="group_id"[^>]*>(.*?)</select>', page, re.S)
+    assert len(forms) == 1 and 'name="kind"' in page                 # one form, with the choice local / RADIUS
     for f in forms:
         assert "students" in f and "teachers" in f and "administrator" not in f
     with portal.sm() as s:

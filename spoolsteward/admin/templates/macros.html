@@ -1,9 +1,8 @@
 {# A block of text with a copy button in its corner (the kind code blocks have in chat UIs). The script is in static/js/app.js. #}
-{# `style` is kept for the old calls: no inline style is written (CSP), the two sizes in use became the classes cb-fs13 / cb-fs15. #}
-{% macro copybox(text, cls='', style='') %}{% set sz = {'font-size:13px': ' cb-fs13', 'font-size:15px': ' cb-fs15'}.get(style, '') %}<div class="copybox"><div data-copy class="{{ cls or 'copytext' }}{{ sz }}">{{ text }}</div>
+{# No inline style is written (CSP): a size is a class (cb-fs13, cb-fs15) added to `cls`. #}
+{% macro copybox(text, cls='') %}<div class="copybox"><div data-copy class="{{ cls or 'copytext' }}">{{ text }}</div>
 <button type="button" class="copy" aria-label="{{ _('Copy to clipboard') }}" title="{{ _('Copy') }}" data-t-copy="{{ _t('Copy') }}" data-t-copied="{{ _t('Copied') }}">
-<svg class="cp" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-<svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>{% endmacro %}
+{{ icon("copy", "cp") }}{{ icon("check", "ok") }}</button></div>{% endmacro %}
 
 {# A choice drawn as one row of buttons (radio inputs). `options`: [(value, label)]. cls="compact": stays in a row on phones too. #}
 {% macro seg(name, options, current, cls='') %}
@@ -16,3 +15,18 @@
 {% macro stepper(name, value, min=0, max=none, placeholder='', label='', id='', required=false) %}
 <span class="stepper"><button type="button" class="sec" tabindex="-1" data-step="-1" aria-label="{{ _('fewer') }}">−</button><input type="number" name="{{ name }}"{% if id %} id="{{ id }}"{% endif %} value="{{ '' if value is none else value }}" min="{{ min }}"{% if max is not none %} max="{{ max }}"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if label %} aria-label="{{ label }}"{% endif %}{% if required %} required{% endif %} inputmode="numeric"><button type="button" class="sec" tabindex="-1" data-step="1" aria-label="{{ _('more') }}">+</button></span>
 {% endmacro %}
+
+{# A state is an icon and a word, no pill. `value` is the stored state (it picks the colour and the icon), `label` the text to show. #}
+{% macro status(value, label=none) %}{% set ic = {'accepted': 'loader-2', 'completed': 'circle-check', 'denied': 'ban', 'failed': 'alert-circle', 'canceled': 'circle-x', 'held': 'player-pause',
+  'pending': 'clock', 'approved': 'circle-check', 'rejected': 'circle-x', 'revoked': 'circle-x', 'expired': 'clock', 'ended': 'clock', 'active': 'circle-check', 'ok': 'circle-check', 'disabled': 'player-pause',
+  'idle': 'circle-check', 'printing': 'loader-2', 'stale': 'alert-circle', 'error': 'alert-circle', 'never': 'clock', 'missing': 'alert-circle', 'modified': 'alert-circle', 'present': 'circle-check'}.get(value, 'circle-check') %}<span class="st s-{{ value }}">{{ icon(ic) }}<span class="w">{{ label if label is not none else state_word(value) }}</span></span>{% endmacro %}
+
+{# The ⋯ menu of a row or card: a <details>, so it opens without scripts. Fill it with .mi links and forms. #}
+{% macro menu_open(label=None) %}<details class="menu"><summary aria-label="{{ label or _t('More actions') }}" title="{{ label or _t('More actions') }}">{{ icon("dots") }}</summary><div class="menulist">{% endmacro %}
+{% macro menu_close() %}</div></details>{% endmacro %}
+
+{# Ticks, one per unit: `used` of `total` (design 6.8). From 51 units on the page uses <progress> instead. #}
+{% macro ticks(used, total) %}{% if total <= 50 %}<span class="ticks{{ ' out' if used >= total }}" aria-hidden="true">{% for i in range(total) %}<i{% if i < used %} class="used"{% endif %}></i>{% endfor %}</span>{% else %}<progress{% if used >= total %} class="out"{% endif %} max="{{ total }}" value="{{ [used, total]|min }}" aria-hidden="true"></progress>{% endif %}{% endmacro %}
+
+{# The page of something that does not exist yet (no printer, no backup): a small sheet beside one sentence that says what is missing. #}
+{% macro empty(text, cls='') %}<p class="emptyline{{ ' ' ~ cls if cls }}"><span class="sheet mini" aria-hidden="true"></span><span>{{ text }}</span></p>{% endmacro %}

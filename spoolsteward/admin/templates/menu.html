@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ _p("menu", "More") }}{% endblock %}
+{% block body %}
+<div class="phead"><h1>{{ _p("menu", "More") }}</h1></div>
+<ul class="rows plain menupage">
+  {% if me.is_admin %}
+  <li><a class="r2" href="/admin/users"><span class="l1">{{ icon("users") }} {{ _p("menu", "People") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="/admin/printers"><span class="l1">{{ icon("plug-connected") }} {{ _p("menu", "Printers") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="/admin/system"><span class="l1">{{ icon("server") }} {{ _p("menu", "System") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  {% endif %}
+  <li><a class="r2" href="/me"><span class="l1">{{ icon("user-circle") }} {{ _p("menu", "Account") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="/me/keys"><span class="l1">{{ icon("device-laptop") }} {{ _p("menu", "Devices") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="{{ '/admin/notices' if me.is_admin else '/me/notices' }}"><span class="l1">{{ icon("bell") }} {{ _p("menu", "Notices") }}</span><span class="end">{% set n = (notices_unseen + own_unseen) if me.is_admin else own_unseen %}{% if n %}<span class="count">{{ n }}</span>{% endif %}{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="/docs"><span class="l1">{{ icon("book") }} {{ _p("menu", "Guide") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+  <li><a class="r2" href="/me/settings"><span class="l1">{{ icon("adjustments") }} {{ _p("menu", "Settings") }}</span><span class="end">{{ icon("chevron-right", "chev") }}</span></a></li>
+</ul>
+<form method="post" action="/logout"><input type="hidden" name="csrf_token" value="{{ csrf }}"><div class="actions"><button class="sec">{{ icon("logout") }}{{ _("Log out") }}</button></div></form>
+{% endblock %}

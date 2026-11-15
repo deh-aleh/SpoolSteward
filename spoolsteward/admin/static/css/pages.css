@@ -1,36 +1,50 @@
-/* Small page-specific rules of the admin templates; each class is prefixed by its template. */
-.ar-path { font-size: 12px; }
-.ar-sha { font-size: 11px; }
-.mn-gap, .me-gap, .no-gap, .ac-gap, .av-gap, .ud-row { margin-top: 12px; }
-.gr-head { justify-content: space-between; }
-.gr-title { margin: 0; }
-.row > .ar-back { flex: none; margin-left: auto; }  /* the way back sits on the right of the title, also on phones */
-.ky-revoke { margin-top: 12px; }
-.ky-label { flex: 1 1 260px; min-width: 200px; }  /* the whole hint "For which device? (e.g. laptop)" fits */
-.ss-card { max-width: 720px; margin-left: auto; margin-right: auto; }
+/* Small page-specific rules of the admin templates; each group of classes is named after its page. */
+/* keys shown once (secret_shown.html) */
+.ss-card { max-width: 720px; margin-inline: auto; }
 .ss-item { margin: 6px 0; }
 .ss-copy.ss-copy { font-size: 13px; }
+/* account */
+.perms { margin-top:4px; grid-template-columns:140px 1fr; gap:8px 24px } .perms dt { color:var(--fg); font-weight:600 }
+/* devices */
+.ky-revoke { margin-top:12px } .ky-intro { margin:0 0 12px }
+.menuform { padding:8px 10px; display:flex; flex-direction:column; gap:6px } .menuform select { width:100% }
+.howto > li { border-bottom:1px solid var(--line) } .howto summary { list-style:none; cursor:pointer } .howto summary::-webkit-details-marker { display:none }
+.howto details[open] summary .chev { transform:rotate(180deg) }
+.howto .detail { padding:0 0 12px } .howto .detail p { margin:0 }
+.connect { margin:0 0 12px; align-items:center } .connect dd { max-width:420px } .connect .copybox > .mono { padding:7px 46px 7px 10px; border:1px solid var(--line); border-radius:5px; background:var(--card); overflow-wrap:anywhere }
+.connect .copybox > .copy { top:3px; right:3px; width:30px; height:30px }
+.menupage .l1 { display:flex; align-items:center; gap:10px }
+/* people */
 .ud-card { max-width: 640px; }
-.ur-row { margin-top: 8px; }
-/* user name above and password + eye below share one column, so the next column starts at the same place */
-.ur-name, .ur-pw { flex: 0 1 280px; min-width: 200px; }
-@media (max-width: 700px) { .ur-name, .ur-pw { flex: 1 1 100%; } }
-.ur-btn { margin-left: 8px; }
-.pw-note { margin: 0 0 14px; }
-.ac-form, .av-form { margin-bottom: 12px; }
-.ac-detail, .av-detail { font-size: 12px; }
-.rg-title, .rq-title { text-align: center; }
+.ue-grants { margin-top: 12px; }
+.urows { border-top:1px solid var(--line) }
+a.urow, .urow { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.3fr) minmax(0,.8fr) minmax(0,.8fr) 18px; gap:4px 16px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); background:var(--card); color:var(--fg); text-decoration:none }
+a.urow:hover { background:color-mix(in srgb, var(--card) 94%, var(--fg)) }
+.urow.uhead { background:none; color:var(--muted); font-size:13px; font-weight:600; padding-top:6px; padding-bottom:6px }
+.urow .l2 { display:block; font-size:13px; color:var(--muted) } .uarrow { color:var(--muted) }
+.urows.grows .urow { grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 18px }
+@media (max-width:1000px) {
+  .urows.grows .urow { grid-template-columns:minmax(0,1fr) 18px }
+  .urow.uhead { display:none }
+  a.urow { grid-template-columns:minmax(0,1fr) 18px; gap:2px 12px }
+  a.urow > span[data-l] { grid-column:1; font-size:13px } a.urow > span[data-l]::before { content:attr(data-l) ": "; color:var(--muted) }
+  a.urow > span[data-l]:empty { display:none } .uname { grid-column:1; grid-row:1 } .uarrow { grid-column:2; grid-row:1 }
+}
+.gr-note { margin:0 0 12px }
+/* requests of a user */
 .rq-opt { display: block; margin: 6px 0; }
-.ue-grants { margin-top: 10px; }
+.rq-form h2 { margin-top:20px }
+/* the usage report */
 .rp-top { width: 90px; }
 form[action="/admin/report"] > button[hidden] { display: none; }  /* the invisible default button of the report form */
 .rp-date { width: 130px; min-width: 0; }
-.rp-set { padding: 8px 14px 4px; }
 .rp-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-.rp-presets button.on { border-color: var(--accent); color: var(--accent); }
-.rp-hint { margin: 2px 0 6px; font-size: 13px; }
-.rp-set { border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+.rp-presets button.on { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); font-weight: 600; }
+.rp-hint { margin: 2px 0 6px; }
+.rp-set { border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; padding: 8px 14px 4px; }
 .rp-excl { margin-right: 14px; white-space: nowrap; }
-.us-warn { margin: 10px 0; padding: 8px 12px; border: 1px solid var(--err); border-radius: 6px; color: var(--err); }
-.authbox select.reg-group { width: 100%; font-size: 17px; min-height: 54px; padding: 10px 14px; margin-bottom: 14px; }
-.authbox .reg-note { margin: 4px 0 16px; }
+/* notices */
+.nlist { background:none } .nrow { display:grid; grid-template-columns:150px minmax(0,1fr) auto; gap:4px 16px; align-items:start; padding:12px 14px; background:var(--card); border-bottom:1px solid var(--line) }
+.nrow.done { color:var(--muted) } .ntime { color:var(--muted); font-size:13px } .ntime small { display:block }
+.ntext { overflow-wrap:anywhere } .nend form { margin:0 }
+@media (max-width:700px) { .nrow { grid-template-columns:minmax(0,1fr) } .nend { grid-row:3 } }

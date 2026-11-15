@@ -15,13 +15,13 @@ Scanners answer eSCL on the queue's IPP port or on port 80; other cases go in `S
 *Scan* (`/me/scan`): no installation, works from any phone.
 
 - **Scanner** selection if there are several. **Source**: *Automatic* (feeder if the scanner declares it loaded, otherwise glass), *Glass*, or *Feeder* (reads **all** sheets, maximum 100).
-- Colour / grey / black and white; **quality** and **paper size** from what the scanner declares for that source.
+- Colour / grey / black and white; **resolution** (300 dpi is preselected) from what the scanner declares for that source. The largest sheet and the limits of the feeder (one or both sides, top resolution) are reported by the scanner too; they are not repeated on the page: the glass usually goes to a higher resolution than the feeder, and a note says so when it does.
 - Output: **PDF** (sheets merged) or **JPEG** (several sheets: ZIP); a **file name** field. Chromium browsers open a folder picker; others save to the downloads folder.
 - The scan runs as a **background task on the server**: you can leave the page and download later (one web scan at a time). If the scanner answers 409/503 (waking up) the gateway retries 3 times.
 - Finished scans wait **in the server's memory**, visible only to their owner (a colour page at 300 dpi is about 1 MB; a 100-page feeder 100 MB). Three settings keep it under control: `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (10), `SPOOLSTEWARD_SCAN_KEEP_MB` (50, all people together:
   the **oldest finished ones are dropped first**, the newest is always kept) and `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` (`true`: a scan can be downloaded once). A scan that has been dropped must be scanned again: download it soon.
 
-![A scan from the glass in progress: the Scan button is greyed out and the bar under it says that the scan is running](../images/en/scan-running.png)
+![A scan in progress: the Scan button is greyed out and the list of recent scans shows it as scanning](../images/en/scan-running.png)
 
 ## 3. Scanning with eSCL clients
 
@@ -35,7 +35,7 @@ The gateway exposes `/eSCL/...`. `ScannerCapabilities` and `ScannerStatus` are p
 
 ### Scan window
 
-**Scan window** (`SPOOLSTEWARD_ESCL_WINDOW`, on by default; a last resort, see its limits below): a button at the top right of *Scan* tells the gateway "my scan app is about to scan". The gateway notes the address it sees for that connection and, for `SPOOLSTEWARD_ESCL_WINDOW_SECONDS` (60–900, default 180),
+**Scan window** (`SPOOLSTEWARD_ESCL_WINDOW`, on by default; a last resort, see its limits below): the section **From a scan app** of *Scan* (a button "Accept scans for 3 minutes", with the address the server sees) tells the gateway "my scan app is about to scan". The gateway notes the address it sees for that connection and, for `SPOOLSTEWARD_ESCL_WINDOW_SECONDS` (60–900, default 180),
 accepts requests **without credentials from that address only**, as the person who pressed it: their quota and permissions apply and the audit shows their name and the address. Any number of scans can be made while it is open.
 
 The window only decides whether a **new** scan may start: a scan that has begun is delivered, and can be closed with DELETE, even if the window ends. Windows live in memory, so a restart closes them. A person has one window; if two people press from the same address, the last press wins. With

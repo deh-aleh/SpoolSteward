@@ -185,27 +185,27 @@ def test_every_setting_is_described_in_both_configuration_pages():
 
 async def test_the_question_mark_is_one_button_for_everybody(boss):
     page = (await boss.get("/admin/jobs")).text
-    assert page.count('class="helpbtn iconbtn ') == 1 and 'href="/docs"' in page
-    assert 'class="helpbtn iconbtn on" href="/docs"' in (await boss.get("/docs/en/backup")).text
+    assert page.count('<span class="lbl">Guide</span>') == 1 and 'href="/docs"' in page
+    assert '<a class="navitem on" href="/docs"' in (await boss.get("/docs/en/backup")).text
     with boss.sm() as s:   # a user who becomes an administrator keeps the same single button and gets every page
         make_user(boss.sm, "ann", password=GOOD)
     await portal_login(boss, "ann", GOOD)
     me = (await boss.get("/me")).text
-    assert me.count('class="helpbtn iconbtn ') == 1 and 'href="/docs"' in me
+    assert me.count('<span class="lbl">Guide</span>') == 1 and 'href="/docs"' in me
     assert (await boss.get("/docs/en/backup")).status_code == 404
     with boss.sm() as s:
         s.scalars(select(User).where(User.username == "ann")).one().is_admin = True
         s.commit()
     assert (await boss.get("/docs/en/backup")).status_code == 200
-    assert (await boss.get("/me")).text.count('class="helpbtn iconbtn ') == 1
+    assert (await boss.get("/me")).text.count('<span class="lbl">Guide</span>') == 1
 
 
 async def test_create_user_form_has_the_show_password_button_and_the_profile_links_the_windows_guide(boss):
-    form = (await boss.get("/admin/users")).text
+    form = (await boss.get("/admin/users/new")).text
     assert 'name="password"' in form and form.count("pwtoggle") >= 1
     make_user(boss.sm, "ann", password=GOOD)
     set_language(boss, "ann", "en")
     await portal_login(boss, "ann", GOOD)
-    me = (await boss.get("/me")).text
+    me = (await boss.get("/me/keys")).text                           # "how to connect a device" is on the Devices page
     assert 'href="/docs/windows"' in me and "Not yet tried" in me   # macOS keeps its note, Windows lost it
     assert me.count("Not yet tried") == 1

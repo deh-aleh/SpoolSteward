@@ -1,11 +1,11 @@
-// The registration switch: off -> a window to choose how to open it; on -> the form posts "off" by itself
+// user_new.html: a RADIUS account has no password here and no admin box
 (function () {
-  var sw = document.getElementById('reg-switch'), dlg = document.getElementById('reg-dlg');
-  if (!sw || !dlg || !dlg.showModal) return;
-  sw.addEventListener('click', function (e) {
-    if (sw.getAttribute('aria-checked') === 'true') return;
-    e.preventDefault();
-    dlg.showModal();
-  });
-  document.getElementById('reg-cancel').addEventListener('click', function () { dlg.close(); });
+  var f = document.getElementById('newuser'); if (!f) return;
+  var radios = f.querySelectorAll('input[name=kind]');
+  function update() {
+    var radius = Array.prototype.some.call(radios, function (r) { return r.checked && r.value === 'radius'; });
+    f.querySelectorAll('[data-local]').forEach(function (e) { e.hidden = radius; });
+  }
+  Array.prototype.forEach.call(radios, function (r) { r.addEventListener('change', update); });
+  update();
 })();

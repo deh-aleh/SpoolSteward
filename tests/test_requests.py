@@ -435,7 +435,7 @@ async def test_full_round_trip_in_the_portal_and_the_invented_period_is_ignored(
                                                   "reason": "trade fair", "csrf_token": web.ann_token})
     assert r.headers["location"] == "/me"
     html = (await web.admin.get("/admin/requests")).text
-    assert "+3 job" in html and "trade fair" in html and 'class="badge">1<' in html          # waiting, and the nav says so
+    assert "+3 job" in html and "trade fair" in html and 'aria-label="1">1</span>' in html    # waiting, and the menu says so
     with web.sm() as s:
         rid = s.scalars(select(QuotaRequest)).one().id
     await web.admin.post(f"/admin/requests/{rid}/approve", data={"amount": "3", "scope": "temporary", "note": "ok",
@@ -510,21 +510,21 @@ async def test_users_can_cancel_their_request_from_their_page(web):
     await web.post(f"/me/requests/{rid}/cancel", data={"csrf_token": web.ann_token})
     with web.sm() as s:
         assert s.get(QuotaRequest, rid).status is RequestStatus.canceled
-    assert 'class="badge"' not in (await web.admin.get("/admin/requests")).text
+    assert 'aria-label="1">1</span>' not in (await web.admin.get("/admin/requests")).text
 
 
 async def test_grants_live_in_the_requests_page_create_and_revoke(web):
     r = await web.admin.post("/admin/grants", data={"username": "ann", "metric": "jobs", "amount": "4", "scope": "temporary",
                                                     "note": "gift", "csrf_token": web.boss_token})
-    assert r.headers["location"] == "/admin/requests"
-    html = (await web.admin.get("/admin/requests")).text
-    assert "+4 jobs" in html and "Active grants" in html and "gift" in html
+    assert r.headers["location"] == "/admin/requests/grants"
+    html = (await web.admin.get("/admin/requests/grants")).text
+    assert "+4 jobs" in html and "gift" in html
     assert (await web.admin.get("/admin/grants")).status_code in (404, 405)                    # one page only, no menu entry
     assert 'href="/admin/grants"' not in html
     with web.sm() as s:
         gid = s.scalars(select(QuotaGrant)).one().id
     await web.admin.post(f"/admin/grants/{gid}/revoke", data={"csrf_token": web.boss_token})
-    assert "revoked" in (await web.admin.get("/admin/requests")).text
+    assert "Revoked" in (await web.admin.get("/admin/requests/history")).text.replace("revoked", "Revoked")
 
 
 async def test_deleting_ended_grants_keeps_the_active_ones_and_is_logged(web):
@@ -539,12 +539,12 @@ async def test_deleting_ended_grants_keeps_the_active_ones_and_is_logged(web):
                        valid_until=now + timedelta(days=3)),
         ])
         s.commit()
-    assert "Delete ended grants" in (await web.admin.get("/admin/requests")).text
+    assert "Delete ended grants" in (await web.admin.get("/admin/requests/history")).text
     await web.admin.post("/admin/grants/purge", data={"csrf_token": web.boss_token})
     with web.sm() as s:
         assert sorted(g.amount for g in s.scalars(select(QuotaGrant))) == [1, 4]
         assert s.scalars(select(AdminAudit).where(AdminAudit.action == "grant.purge")).one().detail_json == {"count": 2, "quota": 2, "permission": 0}
-    assert "Delete ended grants" not in (await web.admin.get("/admin/requests")).text
+    assert "Delete ended grants" not in (await web.admin.get("/admin/requests/history")).text
     await web.admin.post("/admin/grants/purge", data={"csrf_token": web.boss_token})          # nothing left: nothing logged
     with web.sm() as s:
         assert len(s.scalars(select(AdminAudit).where(AdminAudit.action == "grant.purge")).all()) == 1

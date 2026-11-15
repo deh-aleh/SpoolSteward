@@ -448,10 +448,10 @@ async def test_the_page_says_how_many_minutes_the_scan_stays(scanner, monkeypatc
 def test_the_waiting_note_is_translated_with_the_right_form_of_minute():
     from spoolsteward import i18n
 
-    base = "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s "
+    base = "Scanning. You can leave the page: the file stays available for %(n)s "
     ask = lambda n: i18n.ngettext(base + "minute.", base + "minutes.", n, n=n)       # noqa: E731
     expected = {"it": {1: "per 1 minuto.", 10: "per 10 minuti."}, "es": {1: "durante 1 minuto.", 10: "durante 10 minutos."},
-                "ru": {1: "на 1 минуту.", 2: "на 2 минуты.", 5: "на 5 минут.", 21: "на 21 минуту."}, "zh": {1: "保留 1 分钟。", 10: "保留 10 分钟。"}}
+                "ru": {1: "ещё 1 минуту.", 2: "ещё 2 минуты.", 5: "ещё 5 минут.", 21: "ещё 21 минуту."}, "zh": {1: "保留 1 分钟。", 10: "保留 10 分钟。"}}
     for lang, cases in expected.items():
         with i18n.using(lang):
             for n, tail in cases.items():

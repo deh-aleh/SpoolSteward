@@ -15,13 +15,13 @@ Gli scanner rispondono a eSCL sulla porta IPP della coda o sulla 80; gli altri c
 *Scansiona* (`/me/scan`): nulla da installare, funziona da qualunque telefono.
 
 - Scelta dello **scanner** se ce n'è più di uno. **Sorgente**: *Automatica* (caricatore se lo scanner lo dichiara carico, altrimenti vetro), *Vetro* o *Caricatore* (legge **tutti** i fogli, massimo 100).
-- Colore / grigi / bianco e nero; **qualità** e **formato carta** secondo ciò che lo scanner dichiara per quella sorgente.
+- Colore / grigi / bianco e nero; **risoluzione** (300 dpi è già selezionato) secondo ciò che lo scanner dichiara per quella sorgente. Anche il foglio più grande e i limiti del caricatore (uno o due lati, risoluzione massima) li dichiara lo scanner; la pagina non li ripete: dal vetro di solito si arriva a una risoluzione più alta che dal caricatore, e una nota lo dice quando succede.
 - Uscita: **PDF** (più fogli uniti) o **JPEG** (più fogli: ZIP); campo **nome del file**. I browser Chromium aprono la scelta della cartella; gli altri salvano nei download.
 - La scansione gira come **attività di fondo del server**: puoi lasciare la pagina e scaricare dopo (una scansione web alla volta). Se lo scanner risponde 409/503 (si sta svegliando) il gateway riprova 3 volte.
 - Le scansioni finite aspettano **nella memoria del server**, visibili solo al proprietario (una pagina a colori a 300 dpi pesa circa 1 MB; un caricatore da 100 pagine 100 MB). Tre impostazioni la tengono sotto controllo: `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (10), `SPOOLSTEWARD_SCAN_KEEP_MB`
   (50, tutte le persone insieme: **le più vecchie finite vengono tolte per prime**, la più recente resta sempre) e `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` (`true`: si scarica una volta sola). Una scansione tolta va rifatta: scaricala presto.
 
-![Una scansione dal vetro in corso: il pulsante Scansiona è grigio e la barra sotto dice che la scansione è in corso](../images/it/scan-running.png)
+![Una scansione in corso: il pulsante Scansiona è grigio e l'elenco delle scansioni recenti la mostra in corso](../images/it/scan-running.png)
 
 ## 3. Scansione con client eSCL
 
@@ -36,7 +36,7 @@ Il gateway espone `/eSCL/...`. `ScannerCapabilities` e `ScannerStatus` sono pubb
 
 ### Finestra di scansione
 
-**Finestra di scansione** (`SPOOLSTEWARD_ESCL_WINDOW`, accesa di default; un ultimo rimedio, vedi i limiti più sotto): un pulsante in alto a destra in *Scansione* dice al gateway «la mia app sta per scansionare». Il gateway si segna l'indirizzo che vede per quella connessione e, per `SPOOLSTEWARD_ESCL_WINDOW_SECONDS`
+**Finestra di scansione** (`SPOOLSTEWARD_ESCL_WINDOW`, accesa di default; un ultimo rimedio, vedi i limiti più sotto): la sezione **Da un'app di scansione** di *Scansiona* (un pulsante «Accetta scansioni per 3 minuti», con l'indirizzo che il server vede) dice al gateway «la mia app sta per scansionare». Il gateway si segna l'indirizzo che vede per quella connessione e, per `SPOOLSTEWARD_ESCL_WINDOW_SECONDS`
 (60–900, predefinito 180), accetta richieste **senza credenziali solo da quell'indirizzo**, a nome di chi ha premuto: valgono la sua quota e i suoi permessi e l'audit riporta il suo nome e l'indirizzo. Finché è aperta si possono fare quante scansioni si vuole.
 
 La finestra decide solo se può partire una scansione **nuova**: una già iniziata viene consegnata, e può essere chiusa con DELETE, anche se la finestra scade. Le finestre stanno in memoria, quindi un riavvio le chiude. Una persona ha una sola finestra; se due persone premono dallo stesso indirizzo vale l'ultima. Con

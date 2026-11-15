@@ -1,21 +1,27 @@
-/* print.html */
-.drop { border:2px dashed var(--line); border-radius:12px; padding:26px 16px; text-align:center; cursor:pointer; display:block; background:var(--bg) }
-.drop:hover, .drop.over { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--bg)) }
-.drop input { display:none } .drop .big { font-size:17px; font-weight:600; display:block } .drop .name { margin-top:8px; word-break:break-all; font-weight:600 }
-.drop svg { width:34px; height:34px; stroke:var(--accent); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; margin-bottom:6px }
-.sh { display:flex; align-items:center; gap:10px; margin:22px 0 10px !important; font-size:16px } .sh:first-of-type { margin-top:8px !important }
-.sh b { flex:none; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; text-align:center; line-height:24px; font-size:13px }
-.printers { display:grid; gap:8px }
-.printers label { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; background:var(--card) }
-.printers label:hover { border-color:var(--accent) }
-.printers input { accent-color:var(--accent); width:18px; height:18px; min-height:0; padding:0; flex:none; margin:0 }
-.printers .pi { flex:none; width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--muted); border:1px solid var(--line) }
-.printers .pi svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round }
-.printers .pt { min-width:0; overflow-wrap:anywhere } .printers .pt small { display:flex; gap:6px; flex-wrap:wrap; margin-top:3px }
-.printers .pt small .pill { font-size:11.5px; color:var(--muted) }
-.printers label:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 7%, var(--card)) }
-.printers label:has(input:checked) .pi { color:var(--accent); border-color:var(--accent) }
-.printers input:checked + .pi + .pt b { color:var(--accent) }
-button.ico.pt-go { padding:11px 22px }
-.pill.blocked.pt-warn { display:block; border-radius:8px; padding:8px 12px }
-p.muted.pt-mb0 { margin-bottom:0 }
+/* print.html: the sheet on the left is the file, the options on the right (one column on a phone) */
+.printcols { display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr); gap:32px 48px; align-items:start; margin-top:20px }
+.printsheet { padding:0 4px 4px 0 }
+.drop { display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer; aspect-ratio:var(--ratio,210/297); width:100%; padding:24px }
+.drop:hover::after { background:linear-gradient(to bottom left, var(--brand) 50%, transparent 50%) left bottom / var(--cut) var(--cut) no-repeat, color-mix(in srgb, var(--card) 94%, var(--fg)) }
+.drop.over { outline:2px dashed var(--fg); outline-offset:6px }
+.drop:has(input:focus-visible) { outline:2px solid var(--fg); outline-offset:4px }
+.drop input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; margin:0; padding:0; z-index:2 }
+.js .drop input { min-height:0 }
+.drop .empty, .drop .filled { position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none }
+.drop .big { font:600 20px/1.2 var(--head) }
+.drop .btn { pointer-events:none; margin-top:8px }
+.pt-printers { border:0; padding:0; margin:0 0 4px; min-width:0 }
+.pt-one { margin:0 0 8px; font-size:16px }
+.pt-pick { cursor:pointer; display:grid; grid-template-columns:20px minmax(0,1fr); gap:0 12px; align-items:start; padding:10px 0 }
+.pt-pick input { margin-top:2px } .pt-pick .l1, .pt-pick .l2 { grid-column:2 }
+.pt-pick.off { cursor:default; color:var(--muted) }
+.pt-pick:has(input:checked) .l1 { font-weight:700 }
+.pt-left { color:var(--muted); font-size:13px } .pt-left.out { color:var(--err) }
+.pt-hours { margin:12px 0 0 } .pt-after { margin:8px 0 0 }
+.printopts .actions { align-items:center; gap:12px 16px }
+.printopts .actions .pt-go { min-width:120px }
+@media (max-width:700px) {
+  .printcols { grid-template-columns:minmax(0,1fr); gap:20px }
+  .drop { aspect-ratio:auto; min-height:170px }
+  .printopts .actions { align-items:stretch }
+}

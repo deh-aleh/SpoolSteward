@@ -1,24 +1,21 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Notices") }}{% endblock %}
+{% block title %}{{ _p("menu", "Notices") }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-{% if own_rows %}
-<div class="card">
-  <h2>{{ _("For you") }}</h2>
-  <p class="muted">{{ _("What concerns your own account: print keys, group, quota, requests.") }}</p>
-  {% include "_own_notices.html" %}
-</div>
-{% endif %}
-<div class="card">
-  <h1>{{ _("Notices") }}</h1>
-  <p class="muted">{{ _("Things the gateway noticed that administrators should know about. The same notice from the same source is reported again only after a while (now: every %(when)s), and repeats in between are counted.", when=when) }}</p>
+{% set tabset = 'notices' %}
+<div class="phead"><h1>{{ _p("menu", "Notices") }}</h1></div>
+{% include "_tabs.html" %}
+{% if tab == 'own' %}
+<section class="blk">{% include "_own_notices.html" %}</section>
+{% else %}
+<section class="blk">
+  <p class="note">{{ _("The same notice from the same source is reported again only after a while (now: every %(when)s), and repeats in between are counted.", when=when) }}</p>
   {% if rows %}
-  <table class="stack">
-    <tr><th>{{ _("Last time") }}</th><th>{{ _("What happened") }}</th><th>{{ _("Times") }}</th><th></th></tr>
+  <ul class="rows nlist">
     {% for r in rows %}{% set n = r.n %}
-    <tr {% if n.dismissed_at %}class="muted"{% endif %}>
-      <td data-l="{{ _('Last time') }}">{{ n.last_at|localtime }}<div class="muted">{{ _("first: %(t)s", t=n.first_at|localtime) }}</div></td>
-      <td data-l="{{ _('What happened') }}">
+    <li class="nrow{{ ' done' if n.dismissed_at }}">
+      <span class="ntime">{{ n.last_at|neartime }}<small>{{ _("first: %(t)s", t=n.first_at|neartime) }}</small></span>
+      <span class="ntext">
         {% if n.kind == 'escl_anonymous_refused' %}
         {{ _("A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>.", ip=n.key) }}
         {% elif n.kind == 'backup_not_mounted' %}{% set d = n.detail_json or {} %}
@@ -54,19 +51,19 @@
         {% elif n.kind == 'escl_guest_name_taken' %}
         {{ _("<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal.", name=n.key) }}
         {% else %}{{ n.kind }}: {{ n.key }}{% endif %}
-      </td>
-      <td data-l="{{ _('Times') }}">{{ n.count + r.extra }}</td>
-      <td>{% if n.dismissed_at %}<span class="muted">{{ _("dismissed by %(who)s", who=n.dismissed_by or "?") }}</span>
-        {% else %}<form method="post" action="/admin/notices/{{ n.id }}/dismiss"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss") }}</button></form>{% endif %}</td>
-    </tr>
+      {% if n.count + r.extra > 1 %} <span class="muted">(×{{ n.count + r.extra }})</span>{% endif %}</span>
+      <span class="nend">{% if n.dismissed_at %}<span class="muted">{{ _("dismissed by %(who)s", who=n.dismissed_by or "?") }}</span>
+        {% else %}<form method="post" action="/admin/notices/{{ n.id }}/dismiss"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss") }}</button></form>{% endif %}</span>
+    </li>
     {% endfor %}
-  </table>
-  {% else %}<p>{{ _("No notices.") }}</p>{% endif %}
-  <div class="row no-gap">
+  </ul>
+  {% else %}<p class="muted">{{ _("No notices.") }}</p>{% endif %}
+  <div class="actions">
     {% if rows|selectattr('n.dismissed_at', 'none')|list %}
     <form method="post" action="/admin/notices/dismiss-all"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss all") }}</button></form>
     {% endif %}
     <a class="btn sec" href="/admin/notices{{ '' if show_all else '?all=1' }}">{{ _("Hide dismissed") if show_all else _("Show dismissed too") }}</a>
   </div>
-</div>
+</section>
+{% endif %}
 {% endblock %}

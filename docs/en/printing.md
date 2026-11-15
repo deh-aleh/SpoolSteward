@@ -18,7 +18,7 @@ There are two ways to print: through the **gateway's IPP address** (computers an
 
 ## 2. Printing with the IPP address
 
-Address: `ipps://<server>:8631/printers/<queue>`. The client authenticates with HTTP Basic: **user name + print key** (created in *Profile*; [accounts.md](accounts.md)). The domain password does not print.
+Address: `ipps://<server>:8631/printers/<queue>`. The client authenticates with HTTP Basic: **user name + print key** (created in *Devices*; [accounts.md](accounts.md)). The domain password does not print.
 
 | Device | How to connect | Status |
 |---|---|---|

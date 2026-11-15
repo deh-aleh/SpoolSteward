@@ -185,11 +185,13 @@ async def test_the_key_page_gives_a_ready_command_per_printer_and_never_logs_the
     assert key not in (await web.get("/me")).text                                    # shown once, never again
 
 
-async def test_the_profile_explains_how_to_connect_each_kind_of_device(web):
+async def test_the_devices_page_explains_how_to_connect_each_kind_of_device(web):
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "HP7305", "info": "", "model": ""}])
-    page = (await web.get("/me")).text
-    assert "Phone or tablet" in page and "/me/print" in page and "Linux" in page and "Windows" in page and "macOS" in page and "/docs/windows" in page
+    page = (await web.get("/me/keys")).text
+    assert "Phone or tablet" in page and "Linux" in page and "Windows" in page and "macOS" in page and "/docs/windows" in page
     assert "ipps://gw.test:443/printers/" in page and "HP7305" in page
+    assert page.count("<details>") == 4                                           # one section to open for each kind of device
+    assert 'class="mono">web<' in page or "User name" in page                      # the user name and the server, ready to copy
 
 
 def two_pages() -> bytes:

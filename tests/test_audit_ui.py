@@ -39,7 +39,12 @@ def add_jobs(cl, n=1, **kw):
 
 
 def row_count(html: str) -> int:
-    return len(re.findall(r'data-l="No\."', html))
+    return html.count('<li class="jr">')
+
+
+def rows_of(html: str) -> list[str]:
+    """The rows of the log, each as its summary + detail text."""
+    return re.findall(r'<li class="jr">(.*?)</li>', html, re.S)
 
 
 # ---------------------------------------------------------------- paging
@@ -48,67 +53,64 @@ async def test_every_audit_page_holds_at_most_30_actions(admin):
     add_jobs(admin, 65)
     p1 = (await admin.get("/admin/jobs")).text
     p3 = (await admin.get("/admin/jobs?page=3")).text
-    assert row_count(p1) == 30 and "Page 1 / 3" in p1
+    assert row_count(p1) == 30 and "Page 1 of 3" in p1
     assert row_count((await admin.get("/admin/jobs?page=2")).text) == 30 and row_count(p3) == 5
 
 
 # ---------------------------------------------------------------- shortened texts
 
-async def test_long_file_name_and_comment_get_clickable_dots_with_the_full_text_in_a_popup(admin):
+async def test_the_whole_text_of_a_row_is_in_its_detail_and_nothing_is_a_tiny_button(admin):
     add_jobs(admin, title=LONG_NAME, options_json={"document_name": LONG_NAME + ".bak", "comment": LONG_COMMENT, "via": "web",
                                                  "document_format": "application/pdf", "copies": 3})
     add_jobs(admin, title="short.pdf", options_json={"comment": "ok"})
     page = (await admin.get("/admin/jobs")).text
-    assert len(LONG_NAME) > FILE_MAX and len(LONG_COMMENT) > COMMENT_MAX
-    cells = re.findall(r'<td data-l="File" class="wrap">(.*?)</td>', page, re.S)
-    long_cell = next(x for x in cells if "quarterly-report" in x)
-    short_cell = next(x for x in cells if "short.pdf" in x)
-    assert LONG_NAME[:FILE_MAX].rstrip() in long_cell and LONG_NAME not in long_cell.split("<dialog>")[0]   # cut in the table...
-    assert 'class="dots"' in long_cell and "<dialog>" in long_cell
-    popup = long_cell.split("<dialog>")[1]
-    assert LONG_NAME in popup and LONG_COMMENT in popup and "application/pdf" in popup and "web portal" in popup   # ...whole in the popup
-    assert "dots" not in short_cell and "<dialog>" not in short_cell                                           # short ones stay plain
+    long_row = next(x for x in rows_of(page) if "quarterly-report" in x)
+    summary, detail = long_row.split('<div class="detail">')
+    assert LONG_NAME in summary                                          # the whole name is in the row: the stylesheet shortens it on screen
+    assert LONG_COMMENT in detail and LONG_NAME + ".bak" in detail and "application/pdf" in detail and "web portal" in detail
+    assert 'class="dots"' not in page and "ⓘ" not in page and "data-open-next" not in page and "data-open-td" not in page
 
 
-async def test_long_note_is_cut_and_opens_a_popup_with_a_copy_button(admin):
+async def test_a_refusal_shows_its_reason_in_the_row_and_the_detail_copies_it(admin):
     reason = "weekly page limit would be exceeded (used 48, this document 20, limit 50) and some more text"
     add_jobs(admin, state=JobState.denied, denied_reason=reason)
-    add_jobs(admin, state=JobState.denied, denied_reason="user disabled")
+    add_jobs(admin, state=JobState.completed, denied_reason=None, title="fine.pdf")
     page = (await admin.get("/admin/jobs")).text
-    assert len(reason) > NOTE_MAX
-    notes = re.findall(r'<td data-l="Notes"[^>]*>(.*?)</td>', page, re.S)
-    long_note = next(x for x in notes if "weekly" in x)
-    assert reason[:NOTE_MAX].rstrip() in long_note.split("<dialog>")[0] and 'class="dots"' in long_note and "<details" not in long_note
-    popup = long_note.split("<dialog>")[1]
-    assert f'data-copy class="copytext">{reason}</div>' in popup and 'class="copy"' in popup                    # whole note + the copy button
-    short = next(x for x in notes if "disabled" in x)
-    assert "<dialog>" not in short and 'class="dots"' not in short
+    refused = next(x for x in rows_of(page) if reason in x)
+    summary, detail = refused.split('<div class="detail">')
+    assert f'<span class="jl2 s-denied">{reason}</span>' in summary      # in red, where the printer and the pages would be
+    assert f'data-copy class="copytext">{reason}</div>' in detail and 'class="copy"' in detail   # the whole note, with a copy button
+    fine = next(x for x in rows_of(page) if "fine.pdf" in x)
+    assert "s-denied" not in fine.split('<div class="detail">')[0] and "<dt>Note</dt>" not in fine
 
 
 # ---------------------------------------------------------------- device / action
 
-async def test_device_and_action_columns(admin):
+async def test_device_kind_and_pages_are_on_the_second_line_of_a_row(admin):
     admin.app.state.scanner_device_cache = (time.monotonic(), "virtual")   # the print queue that shares the scanner's device
     add_jobs(admin, kind=JobKind.scan, printer="scanner", title="scan", options_json={"via": "web", "source": "adf"})
     add_jobs(admin, kind=JobKind.scan, printer="scanner", title="scan", options_json={"via": "web", "source": "platen"})
-    add_jobs(admin, printer="hp", title="a.pdf", options_json={"color": "monochrome", "sides": "two-sided-long-edge"})
+    add_jobs(admin, printer="hp", title="a.pdf", pages=3, options_json={"color": "monochrome", "sides": "two-sided-long-edge"})
     add_jobs(admin, printer="hp", title="b.pdf")
     page = (await admin.get("/admin/jobs")).text
-    assert "<th>Device</th><th>Action</th>" in page and "<th>Printer</th>" not in page and "<th>Type</th>" not in page
-    cells = re.findall(r'<td data-l="Device" class="wrap">(.*?)</td>\s*<td data-l="Action">(.*?)</td>', page, re.S)
-    scans = [(d, a) for d, a in cells if a.lstrip().lower().startswith("scan")]
-    assert [d for d, _ in scans] == ["virtual", "virtual"]            # never the literal "scanner"
-    assert sum(">ADF<" in a for _, a in scans) == 1                   # ADF badge only when the feeder was used
-    prints = [a for _, a in cells if a.lstrip().startswith("print")]
-    assert len(prints) == 2 and all("<dialog>" in a for a in prints)
-    assert "black and white" in prints[1] and "double-sided" in prints[1]
-    assert "printer default" in prints[0] and "<dd>normal</dd>" in prints[0]
-    assert "scanner" not in " ".join(d for d, _ in cells)
-    adf = next(a for _, a in scans if ">ADF<" in a)
-    assert re.search(r"scan\s*<div><span class=\"pill\"[^>]*>ADF</span></div>", adf)     # the badge sits on its own line
-    assert "pecifications" not in " ".join(a for _, a in scans)       # no print specs on a scan row
-    # pages sit between the state and the file, and the heading is short
-    assert re.search(r"<th>State .*?</th><th>Pg\.</th><th>File</th>", page, re.S) and "<th>Pages</th>" not in page
+    rows = rows_of(page)
+    scans = [x for x in rows if "· scan" in x]
+    prints = [x for x in rows if "· print" in x]
+    assert len(scans) == 2 and len(prints) == 2
+    assert all("virtual · scan" in x for x in scans) and "scanner ·" not in page      # never the literal "scanner"
+    assert sum("<abbr" in x.split('<div class="detail">')[0] for x in scans) == 1     # ADF badge only when the feeder was used
+    assert all("<dt>Colour</dt>" not in x for x in scans)                               # no print specs on a scan row
+    a = next(x for x in prints if "a.pdf" in x)
+    assert "hp · print · 3 pages" in a and "<dd>black and white</dd>" in a and "<dd>double-sided (long edge)</dd>" in a
+    b_ = next(x for x in prints if "b.pdf" in x)
+    assert "<dd>printer default</dd>" in b_ and "<dd>normal</dd>" in b_
+
+
+async def test_rows_are_grouped_by_day_with_the_day_written_once(admin):
+    add_jobs(admin, 2)
+    add_jobs(admin, 1, ts=datetime.now(UTC) - timedelta(days=1))
+    page = (await admin.get("/admin/jobs")).text
+    assert page.count('class="dayhead">Today<') == 1 and page.count('class="dayhead">Yesterday<') == 1
 
 
 async def test_csv_uses_the_device_name_and_carries_the_print_specs(admin):
@@ -124,10 +126,12 @@ async def test_csv_uses_the_device_name_and_carries_the_print_specs(admin):
 
 async def test_auto_refresh_defaults_to_30_seconds_and_is_set_in_the_settings(admin):
     page = (await admin.get("/admin/jobs")).text
-    assert 'data-ar-secs="30"' in page and 'data-ar-on="1"' in page and "every 30 seconds" in page
-    assert 'name="seconds"' in (await admin.get("/me/settings")).text
+    assert 'data-ar-secs="30"' in page and 'data-ar-on="1"' in page and "Refresh every 30 s" in page
+    assert 'name="seconds" value="15"' in page and 'name="seconds" value="60"' in page      # the interval is chosen next to the switch
+    assert 'name="seconds"' not in (await admin.get("/me/settings")).text
     tok = await csrf_of_page(admin, "/me/settings")
-    await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "90"})
+    r = await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "90", "next": "/admin/jobs"})
+    assert r.headers["location"] == "/admin/jobs"                                       # back to the page it was chosen on
     assert 'data-ar-secs="90"' in (await admin.get("/admin/jobs")).text
     r = await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "2"})            # below the minimum
     assert "between 5 and 3600" in (await admin.get("/me/settings")).text and r.status_code == 303
@@ -145,11 +149,13 @@ async def test_only_administrators_see_the_refresh_setting(portal):
 
 # ---------------------------------------------------------------- layout
 
-async def test_menu_is_sticky_and_the_big_red_button_is_there(admin):
+async def test_the_sidebar_stays_in_place_and_maintenance_lives_in_the_system_page(admin):
     page = (await admin.get("/admin/jobs")).text
     css = (await admin.get("/admin/static/css/app.css")).text
-    assert "position:sticky; top:0" in css and "PUT IN MAINTENANCE" in page and 'class="maint ' in page
-    assert "stack-md" in page                                         # table turns into cards on narrow screens
+    assert "#sidebar { position:sticky; top:0" in css and 'id="sidebar"' in page
+    assert 'class="maint' not in page and "Start maintenance" not in page            # no longer a button on every page
+    system = (await admin.get("/admin/system")).text
+    assert "Start maintenance" in system and 'action="/admin/maintenance"' in system
 
 
 # ---------------------------------------------------------------- users: grant tooltips
@@ -219,7 +225,7 @@ async def test_blocked_printer_stops_everybody_administrators_included(two):
     assert last_job(two).denied_reason == control.BLOCKED_REASON
     tok = await as_user(two, "boss")
     page = (await two.get("/admin/printers")).text
-    assert "BLOCKED FOR EVERYONE" in page and "Unblock use" in page and "Hide from mDNS" in page
+    assert "Blocked for everyone, admins included" in page and ">Unblock<" in page and "Hide from the network" in page
     await two.post("/admin/printers/virtual/block", data={"csrf_token": tok, "on": "0"})
     await web_print(two, "again.pdf", tok)
     assert last_job(two).state is JobState.accepted
@@ -228,17 +234,17 @@ async def test_blocked_printer_stops_everybody_administrators_included(two):
 @requires_cups
 async def test_maintenance_stops_users_but_not_administrators(two):
     tok = await as_user(two, "boss")
-    assert "PUT IN MAINTENANCE" in (await two.get("/admin/jobs")).text
+    assert "Start maintenance" in (await two.get("/admin/system")).text
     r = await two.post("/admin/maintenance", data={"csrf_token": tok, "on": "1", "next": "/admin/jobs"})
     assert r.status_code == 303 and r.headers["location"] == "/admin/jobs"
     with two.sm() as s:
         assert control.is_maintenance(s)
     page = (await two.get("/admin/jobs")).text
-    assert "LEAVE MAINTENANCE" in page and "GATEWAY IN MAINTENANCE" in page
+    assert "End maintenance" in (await two.get("/admin/system")).text and "Maintenance in progress" in page
     await web_print(two, "boss.pdf", tok)                                        # administrators keep working
     assert last_job(two).state is JobState.accepted
     tok = await as_user(two, "ann")
-    assert "GATEWAY IN MAINTENANCE" in (await two.get("/me")).text
+    assert "Maintenance in progress: printing and scanning are stopped." in (await two.get("/me")).text
     await web_print(two, "ann.pdf", tok)
     j = last_job(two)
     assert j.state is JobState.denied and j.denied_reason == control.MAINTENANCE_REASON
@@ -364,14 +370,20 @@ async def test_ipp_print_records_colour_and_sides_and_respects_the_switches(ipp)
     assert states == [("mario", "accepted"), ("mario", "denied"), ("boss", "denied"), ("mario", "denied"), ("boss", "accepted")]
 
 
-async def test_header_has_brand_block_and_icon_buttons(portal):
+async def test_sidebar_has_the_brand_the_menu_and_log_out(portal):
     make_user(portal.sm, "ada", password="correct horse battery", admin=True)
+    make_user(portal.sm, "pia", password="correct horse battery")
     await portal_login(portal, "ada", "correct horse battery")
     page = (await portal.get("/me")).text
-    assert 'class="brand' in page and "<b>SpoolSteward</b><small>(ada)</small>" in page
-    assert page.count('class="maint iconbtn') == 1 and 'class="sec iconbtn"' in page      # maintenance and log out are icons
-    assert 'aria-label="PUT IN MAINTENANCE"' in page and 'aria-label="Log out"' in page   # with their (translated) names
-    assert ">Actions<" in page and ">Admin actions<" not in page                            # short menu labels
+    assert 'class="brand"' in page and '<span class="bname">SpoolSteward</span>' in page and 'class="who" title="ada">ada<' in page
+    assert 'aria-label="Log out"' in page and "Management" in page
+    for label in ("Print", "Scan", "Account", "Devices", "Log", "People", "Requests", "Printers", "System", "Notices", "Guide", "Settings"):
+        assert f'<span class="lbl">{label}</span>' in page, label
+    assert 'href="/me"' in page and 'aria-current="page"' in page                       # the page you are on is marked
+    await portal.post("/logout", data={"csrf_token": csrf_from(page)})
+    await portal_login(portal, "pia", "correct horse battery")
+    user_page = (await portal.get("/me")).text
+    assert "Management" not in user_page and '<span class="lbl">People</span>' not in user_page and '<span class="lbl">Devices</span>' in user_page
 
 
 def test_notice_rate_limit_follows_the_log_level(monkeypatch):
@@ -409,11 +421,15 @@ async def test_refused_anonymous_scans_make_one_notice_a_day_not_one_per_try(por
     await portal_login(portal, "ada", "correct horse battery")
     page = (await portal.get("/admin/notices")).text
     assert "10.0.0.7" in page and "SPOOLSTEWARD_ESCL_ANONYMOUS" in page
-    assert 'class="belln"' not in page and 'class="belln"' not in (await portal.get("/me")).text   # opening the list is "seeing" it
+    def bell(html):    # the counter on the Notices entry of the menu
+        entry = re.search(r'<a class="navitem[^"]*" href="/admin/notices".*?</a>', html, re.S).group(0)
+        return re.search(r'class="count"[^>]*>(\d+)<', entry)
+
+    assert bell(page) is None and bell((await portal.get("/me")).text) is None                    # opening the list is "seeing" it
     assert notices.report(sm, "escl_anonymous_refused", "10.0.0.9", now=time.time())                # something new happens
-    assert 'class="belln">1<' in (await portal.get("/me")).text                                    # red dot again, with the count
+    assert bell((await portal.get("/me")).text).group(1) == "1"                                    # a counter again
     await portal.get("/admin/notices")
-    assert 'class="belln"' not in (await portal.get("/me")).text
+    assert bell((await portal.get("/me")).text) is None
     csrf = csrf_from(page)
     with sm() as s:
         nid = s.scalars(select(Notice).where(Notice.key == "10.0.0.7")).one().id
@@ -456,14 +472,13 @@ async def test_healthz_shows_only_what_the_administrator_chose(portal, monkeypat
 
 # ---------------------------------------------------------------- audit numbering
 
-async def test_audit_has_a_number_column_before_the_date(admin):
+async def test_audit_detail_has_the_number_and_the_csv_too(admin):
     with admin.sm() as s:
         s.add(JobLog(user_name="zed", printer="p", title="t.pdf", state=JobState.completed))
         s.commit()
         n = s.scalars(select(JobLog)).first().id
     page = (await admin.get("/admin/jobs")).text
-    head = re.search(r"<tr><th>No\.</th><th>When</th>", page)
-    assert head and f'data-l="No." class="mono muted">{n}</td>' in page
+    assert f"<dt>No.</dt><dd>{n}</dd>" in page
     assert (await admin.get("/admin/jobs.csv")).text.splitlines()[0].startswith("n,time,user,kind")
 
 
@@ -475,7 +490,7 @@ def _job(sm, user_id, **kw):
         s.commit()
 
 
-async def test_audit_has_stripes_state_help_and_guest_info(portal, admin):
+async def test_audit_rows_have_no_stripes_the_states_are_in_the_guide_and_guests_show_where_they_came_from(portal, admin):
     with portal.sm() as s:
         boss = s.scalars(select(User).where(User.username == "boss")).one().id
         guest = User(username="unknown-guest", provider="local", enabled=False)
@@ -486,22 +501,21 @@ async def test_audit_has_stripes_state_help_and_guest_info(portal, admin):
          options_json={"via": "escl", "guest_ip": "10.1.2.3", "guest_host": "pc-room3.school.lan"})
     _job(portal.sm, boss)
     page = (await portal.get("/admin/jobs")).text
-    assert 'class="stack-md zebra"' in page
-    assert 'id="states-help"' in page and all(w in page for w in ("Accepted.", "Completed.", "Denied.", "Failed.", "Canceled.", "On hold."))
-    assert re.search(r"<th>State <button[^>]*info-lg", page)
+    assert "zebra" not in page and 'id="states-help"' not in page and "info-lg" not in page
+    assert "What “Completed” means" in page and "/docs/en/audit#1-print-and-scan-audit" in page    # the explanation is in the guide
     assert "10.1.2.3" in page and "pc-room3.school.lan" in page and "Scan without sign-in" in page
-    assert page.count("Scan without sign-in") == 1                   # only the guest row has the button
+    assert page.count("Scan without sign-in") == 1                   # only the guest row has the information
     # no hostname known: say so instead of leaving a hole
     _job(portal.sm, gid, kind=JobKind.scan, printer="scanner", options_json={"via": "escl", "guest_ip": "10.9.9.9"})
     assert "not available" in (await portal.get("/admin/jobs")).text
 
 
-async def test_actions_page_is_30_rows_and_roomy(portal, admin):
+async def test_actions_page_is_30_rows_that_open(portal, admin):
     with portal.sm() as s:
         for i in range(ACTIONS_PAGE + 5):
             s.add(AdminAudit(actor_name="boss", action=f"test.{i}"))
         s.commit()
     page = (await portal.get("/admin/actions")).text
     assert ACTIONS_PAGE == 30
-    assert page.count('<td class="mono">test.') == 30 and "Page 1 / 2" in page
-    assert 'class="roomy stack"' in page
+    assert page.count('class="jn mono">test.') == 30 and "Page 1 of 2" in page
+    assert page.count("<details>") == 30                              # every action opens to show its details

@@ -143,8 +143,10 @@ async def test_users_revoke_only_their_own_keys(portal):
 async def test_admin_can_revoke_all_keys_of_a_user_and_it_is_logged(portal):
     make_user(portal.sm, "boss", password=GOOD, admin=True)
     make_user(portal.sm, "ann", password=GOOD)
-    _, p1 = new_key(portal.sm, "ann", "a")
-    _, p2 = new_key(portal.sm, "ann", "b")
+    # the portal revokes with the real clock while NOW is fixed: a 30-day key made at NOW would already be expired
+    # (and an expired key is not revoked: it is over), so the test would start failing once the real date passes it
+    _, p1 = new_key(portal.sm, "ann", "a", ttl=3650)
+    _, p2 = new_key(portal.sm, "ann", "b", ttl=3650)
     await portal_login(portal, "boss", GOOD)
     token = await csrf_of_page(portal, "/admin/users")
     with portal.sm() as s:

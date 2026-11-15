@@ -15,7 +15,7 @@ lists what is and is not protected, how to encrypt the names and the settings th
 | User name, groups, printer names, the administrators' action log, reasons of requests (quota, group, permission) and notes of grants, permissions and allowed hours, IP addresses | **In clear** in the database |
 | Amounts (pages, date, state of each print) | In clear: quotas need them |
 | The database as a file | Not encrypted: whoever copies the file reads everything, the file names too unless you encrypted them (encrypted ones are stored as `enc1:<base64>`, AES-256-GCM) |
-| Backups | Encrypted only if you choose encryption in the *Backup* menu (recommended) |
+| Backups | Encrypted only if you choose encryption in the *System* page (recommended) |
 
 ## 2. The "File names" button (green / red)
 
@@ -79,7 +79,7 @@ disk you name. There are three places to put on the encrypted disk:
 Moving Docker's data folder to the encrypted disk (`data-root` in `/etc/docker/daemon.json`) and making Docker start only after unlocking takes some Linux practice:
 if you have never done it, prefer reinstalling with an encrypted disk.
 
-**Backups.** Always encrypt them (passphrase or recovery key, *Backup* menu): an unencrypted backup contains the whole database, and often ends up on an unprotected network disk.
+**Backups.** Always encrypt them (passphrase or recovery key, *System* page): an unencrypted backup contains the whole database, and often ends up on an unprotected network disk.
 
 ## 6. One last thing: the CUPS history
 

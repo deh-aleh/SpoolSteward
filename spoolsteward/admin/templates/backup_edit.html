@@ -1,25 +1,26 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Edit backup") }}{% endblock %}
+{% block title %}{{ _p("menu", "System") }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="/admin/static/css/backup_edit.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<form class="card be-form" method="post" action="/admin/backups/{{ t.id }}">
-  <h1>{{ _("Edit backup “%(name)s”", name=t.name) }}</h1>
+<a class="back" href="/admin/system#backup">{{ icon("arrow-left", "sm") }}{{ _p("menu", "System") }}</a>
+<div class="phead"><h1>{{ _("Edit backup “%(name)s”", name=t.name) }}</h1></div>
+<form class="formpage be-form" method="post" action="/admin/backups/{{ t.id }}">
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <dl class="kv be-center">
-    <dt>{{ _("Name") }}</dt><dd><input type="text" name="name" maxlength="80" value="{{ t.name }}" required></dd>
-    <dt>{{ _("Folder") }}</dt><dd><input type="text" name="folder" maxlength="200" value="{{ t.folder }}" required list="folders">
+  <div class="frows">
+    <div class="frow"><label class="permhead" for="be-name">{{ _("Name") }}</label><div class="fctl"><input type="text" id="be-name" name="name" maxlength="80" value="{{ t.name }}" required></div></div>
+    <div class="frow"><label class="permhead" for="be-folder">{{ _("Folder") }}</label><div class="fctl"><input type="text" id="be-folder" name="folder" maxlength="200" value="{{ t.folder }}" required list="folders">
       <datalist id="folders">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
-      <div class="muted">{{ _("inside %(root)s. Copies already written stay in the old folder.", root=root) }}</div></dd>
-    <dt>{{ _("Safety") }}</dt><dd><label><input type="checkbox" name="require_marker" value="1"{{ " checked" if t.require_marker }}> {{ _("The folder is a network disk or USB disk: write only if it is mounted") }}</label>
-      <div class="muted">{{ _("Leave it ticked for a network disk or USB disk, and save while the disk is mounted: if it is missing later, nothing is written.") }}</div></dd>
-    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ t.hour }}" class="be-w5"> :00</dd>
-    <dt>{{ _("Copies") }}</dt><dd>
-      <input type="number" name="keep_daily" min="1" value="{{ t.keep_daily }}" class="be-w5"> {{ _("daily") }}
-      <input type="number" name="keep_weekly" min="0" value="{{ t.keep_weekly }}" class="be-w5"> {{ _("weekly") }}
-      <input type="number" name="keep_monthly" min="0" value="{{ t.keep_monthly }}" class="be-w5"> {{ _("monthly") }}</dd>
-    <dt>{{ _("Encryption") }}</dt><dd>{{ {'none': _('none'), 'passphrase': _('passphrase'), 'key': _('recovery key')}[t.mode] }}
-      <div class="muted">{{ _("it cannot be changed from here, so you never lose the ability to open the copies: create a new backup with the encryption you want.") }}</div></dd>
-  </dl>
-  <div class="actions"><button>{{ _("Save") }}</button><a class="btn sec" href="/admin/backups">{{ _("Cancel") }}</a></div>
+      <span class="hint">{{ _("inside %(root)s. Copies already written stay in the old folder.", root=root) }}</span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Safety") }}</div><div class="fctl"><label class="check"><input type="checkbox" name="require_marker" value="1"{{ " checked" if t.require_marker }}> {{ _("The folder is a network disk or USB disk: write only if it is mounted") }}</label>
+      <span class="hint">{{ _("Leave it ticked for a network disk or USB disk, and save while the disk is mounted: if it is missing later, nothing is written.") }}</span></div></div>
+    <div class="frow"><label class="permhead" for="be-hour">{{ _("Time") }}</label><div class="fctl"><span class="row"><input type="number" name="hour" id="be-hour" min="0" max="23" value="{{ t.hour }}" class="be-w5"><span>:00</span></span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Copies") }}</div><div class="fctl"><span class="row">
+      <input type="number" name="keep_daily" min="1" value="{{ t.keep_daily }}" class="be-w5" aria-label="{{ _t('daily') }}"> <span>{{ _("daily") }}</span>
+      <input type="number" name="keep_weekly" min="0" value="{{ t.keep_weekly }}" class="be-w5" aria-label="{{ _t('weekly') }}"> <span>{{ _("weekly") }}</span>
+      <input type="number" name="keep_monthly" min="0" value="{{ t.keep_monthly }}" class="be-w5" aria-label="{{ _t('monthly') }}"> <span>{{ _("monthly") }}</span></span></div></div>
+    <div class="frow"><div class="permhead">{{ _("Encryption") }}</div><div class="fctl">{{ {'none': _('none'), 'passphrase': _('passphrase'), 'key': _('recovery key')}[t.mode] }}
+      <span class="hint">{{ _("it cannot be changed from here, so you never lose the ability to open the copies: create a new backup with the encryption you want.") }}</span></div></div>
+  </div>
+  <div class="actions"><button>{{ _("Save") }}</button><a class="btn sec" href="/admin/system#backup">{{ _("Cancel") }}</a></div>
 </form>
 {% endblock %}

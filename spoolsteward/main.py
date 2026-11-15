@@ -18,9 +18,10 @@ from spoolsteward.admin.audit_archive import router as archive_router
 from spoolsteward.admin.backups import router as backups_router
 from spoolsteward.admin.notices import router as notices_router
 from spoolsteward.admin.updates import router as update_router
+from spoolsteward.admin.system import router as system_router
 from spoolsteward.admin.controls import router as controls_router
 from spoolsteward.admin.docs import router as docs_router
-from spoolsteward.admin.me import router as me_router
+from spoolsteward.admin.me import menu_router, router as me_router
 from spoolsteward.admin.me_notices import router as me_notices_router
 from spoolsteward.admin.printing import router as print_router
 from spoolsteward.admin.reports import router as reports_router
@@ -182,10 +183,12 @@ app.include_router(docs_router)
 app.include_router(archive_router)
 app.include_router(backups_router)
 app.include_router(update_router)
+app.include_router(system_router)
 app.include_router(notices_router)
 app.include_router(controls_router)
 app.include_router(me_notices_router)
 app.include_router(me_router)
+app.include_router(menu_router)
 app.include_router(scan_me_router)
 app.include_router(escl_router)
 app.include_router(print_router)

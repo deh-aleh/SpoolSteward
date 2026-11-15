@@ -6,8 +6,8 @@ SpoolSteward keeps **two append-only logs**:
 
 | Log | Table | Content | Page |
 |---|---|---|---|
-| Print and scan audit | `job_log` | who printed or scanned what | **Audit** (`/admin/jobs`) |
-| Administrative actions | `admin_audit` | who did what in the portal | **Admin actions** (`/admin/actions`) |
+| Print and scan audit | `job_log` | who printed or scanned what | **Log** → *Prints and scans* (`/admin/jobs`) |
+| Administrative actions | `admin_audit` | who did what in the portal | **Log** → *Admin actions* (`/admin/actions`) |
 
 Ids are never reused. **No portal function deletes a row.** Audit is kept forever.
 
@@ -15,9 +15,9 @@ Ids are never reused. **No portal function deletes a row.** Audit is kept foreve
 
 Each row has: sequential number, time, user, device (printer queue or scanner), file name, type (print / scan), outcome, pages, rejection reason, and options (paper, colour, duplex, source, copies, page range, comment, `via` web / IPP…).
 
-![The audit page: automatic refresh switch, filters by user, file name and state, CSV export and report, and one completed scan](../images/en/admin-audit.png)
+![The Log: automatic refresh switch with its interval, the tabs, filters by user, file name and state, and the rows grouped by day](../images/en/admin-audit.png)
 
-**The file name** can stop being saved with the green/red button at the top right of the page; with retention (`.env`) it disappears after a number of days you choose. The row always stays. Details: [data-protection.md](data-protection.md).
+**The file name** can stop being saved with the *Save file names* switch in *System*; with retention (`.env`) it disappears after a number of days you choose. The row always stays. Details: [data-protection.md](data-protection.md).
 
 | State | Meaning |
 |---|---|
@@ -28,13 +28,13 @@ Each row has: sequential number, time, user, device (printer queue or scanner), 
 | `failed` | Accepted but the printer or scanner could not carry it out. Does not count |
 | `canceled` | Stopped before printing, by the user, an administrator or the scanning program. Quota is freed |
 
-It has an **Automatic refresh** switch (interval in *Settings*, default 30 s; with 0 the switch starts off and uses 30 s when turned on; the browser remembers the choice). Long texts are shortened with «…» and open in full in a popup. Filters and **CSV export** are available. *Cancel* stops a queued job (using the owner's identity).
+Rows are grouped by day (*Today*, *Yesterday*, then the weekday and date) and **open** when clicked: the detail has the number, the whole file name, the time with seconds, the options, the pages, the comment and the whole note with a copy button. A refusal or an error shows its reason in red in the row itself. The page has an **automatic refresh** switch with its interval beside it (15, 30 or 60 s; the choice is saved for you; with 0 the switch starts off and uses 30 s when turned on; the browser remembers the switch) and it does not reload while a row is open. Filters and **CSV export** are available. *Cancel print* is in the detail of a queued print (it uses the owner's identity). People see their own latest prints in *Account*.
 
-Scans without credentials (anonymous eSCL) show the caller's IP and host name in the information column. A scan made through a scan window shows the address it came from; a request refused because it came from another address than the window's is a *denied* row under the window's owner, and the icon shows both addresses.
+Scans without credentials (anonymous eSCL) show the caller's IP and host name in the detail of the row. A scan made through a scan window shows the address it came from; a request refused because it came from another address than the window's is a *denied* row under the window's owner, and the detail shows both addresses.
 
 ### Usage report
 
-*Report* (button next to *Export CSV*, page `/admin/report`) ranks users by pages printed in a period. Choose the period with a button (*Today*, *Last 7 days*, *This month*, *Last month*, *Last 30 days*, *This year*) or by typing two dates as `2026-10-31`, how many users to list, the groups to **leave out** and **Detailed report**, which adds the prints per printer for each user.
+*Report* (the third tab of the Log, page `/admin/report`) ranks users by pages printed in a period. Choose the period with a button (*Today*, *Last 7 days*, *This month*, *Last month*, *Last 30 days*, *This year*) or by typing two dates as `2026-10-31`, how many users to list, the groups to **leave out** and **Detailed report**, which adds the prints per printer for each user.
 Show it in the page or download **CSV** or **PDF**. Only prints count (completed, waiting or running). Rows already moved to a compressed archive are not read: the page warns when the period reaches back that far. The PDF is in English with standard fonts, so Cyrillic or Chinese names show as `?` there; the CSV keeps them.
 
 ## 2. Reconciliation with CUPS

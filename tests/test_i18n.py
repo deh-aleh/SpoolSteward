@@ -115,7 +115,9 @@ def test_every_language_loads_from_its_po_file():
 # ---------------------------------------------------------------- every page, every language
 
 PAGES = ["/admin/jobs", "/admin/users", "/admin/groups", "/admin/groups/new", "/admin/requests", "/admin/actions",
-         "/admin/backups", "/admin/archive", "/admin/users/{ann}/edit", "/admin/users/{ann}/keys", "/admin/users/{ann}/delete",
+         "/admin/system", "/admin/archive", "/admin/users/{ann}/edit", "/admin/users/{ann}/keys", "/admin/users/{ann}/delete",
+         "/admin/users/new", "/admin/registration", "/admin/requests/grants", "/admin/requests/history", "/admin/report",
+         "/admin/notices", "/admin/notices?tab=own", "/menu", "/docs/en/",
          "/me", "/me/keys", "/me/settings", "/me/print", "/me/scan", "/me/request/quota", "/me/request/group",
          "/me/request/permission"]
 

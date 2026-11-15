@@ -13,7 +13,7 @@ Una **regola** dice: *questo utente o gruppo può stampare al massimo N **job** 
 
 ### Cosa conta
 
-Contano i job `accepted`, `completed` o `held`. **I job rifiutati, falliti e annullati prima della stampa non consumano quota.** L'utente vede consumo e prossimo azzeramento in *Profilo*.
+Contano i job `accepted`, `completed` o `held`. **I job rifiutati, falliti e annullati prima della stampa non consumano quota.** L'utente vede consumo e prossimo azzeramento in *Account*.
 
 ### Pagine contate prima di stampare
 
@@ -27,7 +27,7 @@ Dopo la stampa il riconciliatore sostituisce la stima con le **pagine reali** le
 
 ## 2. Richieste degli utenti
 
-In *Profilo* un utente può chiedere:
+In *Account* un utente può chiedere:
 
 1. **Più quota** — metrica, quantità, **temporanea** o **permanente**, e un motivo. Solo le metriche che hanno un limite. Il **periodo è quello della regola**, mostrato in sola lettura ("il tuo limite pagine è mensile: la deroga durerà fino al 1 novembre").
 2. **Cambio di gruppo** — solo verso gruppi marcati *richiedibili*.
@@ -56,7 +56,7 @@ l'audit conserva quella inglese.
 
 Le quote dicono *quanto*; i permessi dicono *cosa*, *dove* e *quando*. Si impostano con il pulsante **Permessi avanzati** in fondo alla pagina del gruppo (*Gruppi* → modifica) e dell'utente (*Utenti* → modifica); il blocco è chiuso quando tutto è al valore predefinito.
 
-![La pagina di modifica di un gruppo: nome, limiti di job e pagine, periodo, richiedibile, e il blocco Permessi avanzati aperto con colore consentito e solo fronte non consentito](../images/it/admin-group-edit.png)
+![La pagina di modifica di un gruppo: nome, limiti di job e pagine, periodo, richiedibile, e il blocco Permessi avanzati](../images/it/admin-group-edit.png)
 
 | Permesso | Se non è concesso |
 |---|---|
@@ -100,7 +100,7 @@ Le regole guardano `print-color-mode`, `sides` e le opzioni che alcuni driver ma
 unità fronte-retro stampa solo fronte e non viene rifiutata. Il gateway chiede alla coda cosa sa fare (ricordato un minuto); se CUPS non risponde si corregge solo ciò che il client ha indicato in modo esplicito.
 
 Un lavoro rifiutato finisce nell'audit come `denied` con il motivo, **non consuma quota né pagine**, e all'utente arriva un avviso (ogni rifiuto rinnova quello aperto con un contatore). Il client IPP riceve il motivo e l'indirizzo della
-pagina del profilo, dove l'utente vede i suoi permessi e può chiedere quello che manca.
+pagina Account, dove l'utente vede i suoi permessi e può chiedere quello che manca.
 
 ### Da leggere prima di scegliere la modalità
 
@@ -113,7 +113,7 @@ pagina del profilo, dove l'utente vede i suoi permessi e può chiedere quello ch
 
 ### Cosa vede l'utente
 
-- *Profilo*: il riquadro "I tuoi permessi" con il link per chiedere quello che manca. Gli elenchi di stampanti e gli indirizzi pronti mostrano solo le stampanti che la persona può usare.
+- *Account*: la sezione "Cosa puoi stampare" con il link per chiedere quello che manca. Gli elenchi di stampanti e gli indirizzi pronti mostrano solo le stampanti che la persona può usare.
 - *Stampa*: solo le stampanti consentite; niente scelta del colore senza il permesso; una scelta fronte-retro sulle stampanti duplex solo per chi può stampare solo fronte; un avviso con gli orari consentiti quando è fuori orario.
 - La campanella: avvisi "rifiutato", "quota raggiunta" e "modificato" (quello "modificato" è *secondario*: si legge da solo dopo il tempo scelto in `/me/settings`, 20 minuti di base), e uno quando un amministratore cambia i permessi propri della persona.
 
@@ -121,7 +121,7 @@ Il registro degli amministratori (*Azioni*) annota ogni modifica ai permessi con
 
 ### Chiedere un permesso
 
-Chi non ha un permesso lo chiede nel riquadro "I tuoi permessi" del profilo: **Chiedi** accanto a colore, solo fronte e orari, **Chiedi un'altra stampante** per le stampanti. Il modulo offre solo ciò che la persona non ha, e solo le stampanti
+Chi non ha un permesso lo chiede nella sezione "Cosa puoi stampare" di Account: **Chiedi il colore**, **Chiedi il solo fronte**, **Chiedi altri orari**, **Chiedi un'altra stampante** per le stampanti. Il modulo offre solo ciò che la persona non ha, e solo le stampanti
 che esistono adesso. Il motivo è obbligatorio solo con `SPOOLSTEWARD_REQUEST_REASON_REQUIRED=true` (al massimo 500 caratteri). La richiesta viene rifiutata se la persona ha già quel permesso o ha già chiesto la stessa cosa senza risposta.
 Valgono gli stessi freni delle richieste di quota (`SPOOLSTEWARD_MAX_OPEN_REQUESTS` per tutti i tipi insieme, `SPOOLSTEWARD_REQUEST_TTL_DAYS`).
 

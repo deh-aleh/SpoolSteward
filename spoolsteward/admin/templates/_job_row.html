@@ -1,0 +1,47 @@
+{# One print or scan, as a row of a list: /admin/jobs (opens: `detail`), the archive and the account page (`recent`).
+   Variables: r (from admin/audit_view.py), detail, cancel (show "Cancel print"), show_user, when ('time' = HH:MM under a day heading, 'near' = in words). #}
+{% from "macros.html" import status, copybox %}
+{% set j = r.j %}
+{% set summary %}
+  <span class="jt">{{ j.ts|localtime('%H:%M') if when == 'time' else j.ts|neartime }}</span>
+  {% if show_user %}<span class="ju">{{ r.name or '—' }}</span>{% endif %}
+  <span class="jf"><span class="jn usertext">{{ j.title or '—' }}</span>
+    {% if j.state.value in ('denied', 'failed') and r.note %}<span class="jl2 s-denied">{{ j.denied_reason }}</span>
+    {% else %}<span class="jl2">{{ r.device }} · {{ _("scan") if r.scan else _("print") }}{% if j.pages %} · {{ ngettext("%(n)s page", "%(n)s pages", j.pages) }}{% endif %}{% if r.adf %} · <abbr title="{{ _('Scanned with the automatic document feeder (ADF)') }}">ADF</abbr>{% endif %}</span>{% endif %}</span>
+  <span class="jst">{{ status(j.state.value) }}</span>
+  {% if detail %}{{ icon("chevron-down", "chev") }}{% endif %}
+{% endset %}
+<li class="jr">
+{% if detail %}
+  <details>
+    <summary class="jsum{{ ' with-user' if show_user }}">{{ summary }}</summary>
+    <div class="detail">
+      <dl class="kv">
+        <dt>{{ _("No.") }}</dt><dd>{{ j.id }}</dd>
+        <dt>{{ _("When") }}</dt><dd>{{ j.ts|localtime('%Y-%m-%d %H:%M:%S') }}</dd>
+        {% if show_user %}<dt>{{ _("User") }}</dt><dd>{{ r.name or '—' }}</dd>{% endif %}
+        <dt>{{ _("Device") }}</dt><dd>{{ r.device }}</dd>
+        {% for label, value in r.details %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+        {% for label, value in r.specs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+        {% if r.guest %}<dt>{{ _("Scan without sign-in") }}</dt><dd>{{ _("Whoever scanned did not sign in: they are recorded as “%(name)s”. This is all that is known about them.", name=r.name) }}</dd>
+          <dt>{{ _("IP address") }}</dt><dd class="mono">{{ r.guest.ip }}</dd>
+          <dt>{{ _("Host name") }}</dt><dd class="mono">{{ r.guest.host or _('not available (no name registered in the DNS)') }}</dd>{% endif %}
+        {% if r.win %}<dt>{{ _("Scan window") }}</dt>
+          {% if r.win.expected %}<dd>{{ _("Refused: the window was opened for one address and the request came from another.") }}</dd>
+          <dt>{{ _("Address the window was for") }}</dt><dd class="mono">{{ r.win.expected }}</dd><dt>{{ _("Address the request came from") }}</dt><dd class="mono">{{ r.win.got }}</dd>
+          {% else %}<dd>{{ _("The person pressed the scan window button, and this scan came from the address they opened it for.") }}</dd>
+          <dt>{{ _("IP address") }}</dt><dd class="mono">{{ r.win.ip }}</dd><dt>{{ _("Host name") }}</dt><dd class="mono">{{ r.win.host or _('not available (no name registered in the DNS)') }}</dd>{% endif %}{% endif %}
+        {% if j.denied_reason %}<dt>{{ _("Note") }}</dt><dd>{{ copybox(j.denied_reason) }}</dd>{% endif %}
+      </dl>
+      <div class="actions">
+        {% if cancel and j.state.value == 'accepted' and j.cups_job_id and j.printer and r.name %}
+        <form method="post" action="/admin/jobs/{{ j.id }}/cancel" data-confirm="{{ _t('Cancel this queued job?') }}" data-confirm-title="{{ _t('Cancel print') }}" data-confirm-ok="{{ _t('Cancel print') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Cancel print") }}</button></form>{% endif %}
+        <a href="{{ doc_href('states') }}">{{ _("What “%(state)s” means", state=state_word(j.state.value)|capitalize) }}</a>
+      </div>
+    </div>
+  </details>
+{% else %}
+  <div class="jsum{{ ' with-user' if show_user }}">{{ summary }}</div>
+{% endif %}
+</li>

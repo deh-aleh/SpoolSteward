@@ -15,7 +15,7 @@ elenca cosa è protetto e cosa no, come cifrare i nomi e le impostazioni che rid
 | Nome utente, gruppi, nomi delle stampanti, registro delle azioni degli amministratori, motivi delle richieste (quota, gruppo, permesso) e note delle concessioni, permessi e orari consentiti, indirizzi IP | **In chiaro** nel database |
 | Quantità (pagine, data, stato di ogni stampa) | In chiaro: servono alle quote |
 | Il database come file | Non cifrato: chi copia il file legge tutto, anche i nomi dei file se non li hai cifrati (cifrati sono salvati come `enc1:<base64>`, AES-256-GCM) |
-| I backup | Cifrati solo se scegli la cifratura nel menu *Backup* (consigliata) |
+| I backup | Cifrati solo se scegli la cifratura nella pagina *Sistema* (consigliata) |
 
 ## 2. Il pulsante «Nomi dei file» (verde / rosso)
 
@@ -80,7 +80,7 @@ sul disco indicato. Sono tre posti da mettere sul disco cifrato:
 Per spostare la cartella dei dati di Docker sul disco cifrato (`data-root` in `/etc/docker/daemon.json`) e per far partire Docker solo dopo lo sblocco ci vuole un po' di pratica di Linux:
 se non l'hai mai fatto, preferisci la reinstallazione con il disco cifrato.
 
-**I backup.** Cifrali sempre (passphrase o chiave di recupero, menu *Backup*): un backup non cifrato contiene l'intero database, e finisce spesso su un disco di rete non protetto.
+**I backup.** Cifrali sempre (passphrase o chiave di recupero, pagina *Sistema*): un backup non cifrato contiene l'intero database, e finisce spesso su un disco di rete non protetto.
 
 ## 6. Un'ultima cosa: la cronologia di CUPS
 

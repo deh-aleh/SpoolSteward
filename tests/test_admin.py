@@ -112,7 +112,7 @@ async def test_deleting_a_group_with_members_moves_them_to_the_default_group(env
     await login(env)
     t = await token(env)
     gid = q(env, Group, name="staff").id
-    page = (await env.get("/admin/groups")).text
+    page = (await env.get(f"/admin/groups/{gid}/edit")).text           # the delete button lives on the edit page
     assert "has 1 user" in page and "default" in page                            # the warning names the consequence
     await env.post(f"/admin/groups/{gid}/delete", data={"csrf_token": t})
     assert q(env, Group, name="staff") is None

@@ -1,28 +1,23 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Groups") }}{% endblock %}
+{% block title %}{{ _p("menu", "People") }}{% endblock %}
 {% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<div class="card">
-  <div class="row gr-head"><h1 class="gr-title">{{ _("Groups") }}</h1><a class="btn" href="/admin/groups/new">{{ _("New group") }}</a></div>
-  <p class="muted">{{ _("Read-only values: use <b>Edit</b> to change them. Empty limit = no limit. Jobs that were refused, failed or canceled before printing do not count. The page limit is soft: the job that exceeds it is printed anyway.") }}</p>
-  <table class="stack">
-    <tr><th>{{ _("Group") }}</th><th>{{ _("Members") }}</th><th>{{ _("Job limit") }}</th><th>{{ _("Page limit") }}</th><th>{{ _("Period") }}</th><th>{{ _("Requestable") }}</th><th></th></tr>
-    {% for r in rows %}{% set g = r.g %}
-    <tr>
-      <td data-l="{{ _('Group') }}"><b>{{ g.name }}</b>{% if g.name in system %}<div class="muted">{{ _("system group") }}</div>{% endif %}</td>
-      <td data-l="{{ _('Members') }}">{{ r.members }}</td>
-      <td data-l="{{ _('Job limit') }}">{{ r.jobs if r.jobs != '' else _('unlimited') }}</td>
-      <td data-l="{{ _('Page limit') }}">{{ r.pages if r.pages != '' else _('unlimited') }}</td>
-      <td data-l="{{ _('Period') }}">{{ {'weekly': _('weekly'), 'monthly': _('monthly')}.get(r.period, r.period) }}</td>
-      <td data-l="{{ _('Requestable') }}">{{ _('yes') if g.requestable else '—' }}</td>
-      <td><div class="row">
-        <a class="btn sec" href="/admin/groups/{{ g.id }}/edit">{{ _("Edit") }}</a>
-        <form method="post" action="/admin/groups/{{ g.id }}/delete" data-confirm="{{ r.warning }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger" {{ 'disabled' if g.name in system }}>{{ _("Delete") }}</button>
-        </form>
-      </div></td>
-    </tr>
-    {% else %}<tr><td colspan="7" class="muted">{{ _("No groups.") }}</td></tr>{% endfor %}
-  </table>
+{% set tabset = 'people' %}{% set tab = 'groups' %}
+<div class="phead"><h1>{{ _p("menu", "People") }}</h1><div class="pactions"><a class="btn" href="/admin/groups/new">{{ icon("plus") }}{{ _("New group") }}</a></div></div>
+{% include "_tabs.html" %}
+{% if rows %}
+<div class="urows grows" role="table" aria-label="{{ _t('Groups') }}">
+  <div class="urow uhead" role="row"><span role="columnheader">{{ _("Group") }}</span><span role="columnheader">{{ _("Members") }}</span><span role="columnheader">{{ _("Prints") }}</span><span role="columnheader">{{ _("Pages") }}</span><span role="columnheader">{{ _("Period") }}</span><span role="columnheader"></span></div>
+  {% for r in rows %}{% set g = r.g %}
+  <a class="urow" role="row" href="/admin/groups/{{ g.id }}/edit">
+    <span class="uname" role="cell"><b>{{ g.name }}</b>{% if g.name in system %} <span class="pill">{{ _("system group") }}</span>{% endif %}{% if g.requestable %} <span class="pill">{{ _("Can be requested") }}</span>{% endif %}</span>
+    <span role="cell" data-l="{{ _('Members') }}">{{ r.members }}</span>
+    <span role="cell" data-l="{{ _('Prints') }}">{{ r.jobs if r.jobs != '' else _('No limit') }}</span>
+    <span role="cell" data-l="{{ _('Pages') }}">{{ r.pages if r.pages != '' else _('No limit') }}</span>
+    <span role="cell" data-l="{{ _('Period') }}">{{ {'weekly': _('weekly'), 'monthly': _('monthly')}.get(r.period, r.period) }}</span>
+    <span role="cell" class="uarrow">{{ icon("chevron-right", "chev") }}</span>
+  </a>
+  {% endfor %}
 </div>
+{% else %}<p class="muted">{{ _("No groups.") }}</p>{% endif %}
 {% endblock %}

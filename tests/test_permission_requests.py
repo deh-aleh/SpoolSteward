@@ -292,9 +292,10 @@ async def test_round_trip_request_approve_until_a_date_and_the_notices(web):
         {"what": "permission", "perm": "printer", "printer": "color", "until": day.isoformat(), "note": "ok"}]
     html = (await web.get("/me/notices")).text
     assert "Your request for a permission was approved: printer color" in html and day.isoformat() in html
-    assert f"until {day.isoformat()}" in (await web.get("/me")).text
-    active = (await web.admin.get("/admin/requests")).text
-    assert "+ printer color" in active and day.isoformat() in active and "/admin/permission-grants/" in active
+    shown = f"{day.day} {day.strftime('%B')}" + ("" if day.year == datetime.now(UTC).year else f" {day.year}")     # "5 December"
+    assert f"until {shown}" in (await web.get("/me")).text
+    active = (await web.admin.get("/admin/requests/grants")).text
+    assert "+ printer color" in active and f"until {shown}" in active and "/admin/permission-grants/" in active
     assert "printer color" in (await web.admin.get(f"/admin/users/{web.ann}/edit")).text
 
 
@@ -355,7 +356,7 @@ async def test_ordinary_users_can_not_decide_grant_or_revoke_permissions(web):
 async def test_direct_grant_form_permission_and_quota_revoke_and_notices(web):
     base = {"username": "ann", "csrf_token": web.boss_token, "amount": "", "metric": "jobs", "scope": "temporary"}
     r = await web.admin.post("/admin/grants", data={**base, "kind": "permission", "perm": "color", "duration": "permanent", "note": "gift"})
-    assert r.headers["location"] == "/admin/requests"
+    assert r.headers["location"] == "/admin/requests/grants"
     with web.sm() as s:
         g = s.scalars(select(PermissionGrant)).one()
         assert (g.perm, g.valid_until, g.note) == ("color", None, "gift")
@@ -370,7 +371,7 @@ async def test_direct_grant_form_permission_and_quota_revoke_and_notices(web):
     await web.admin.post("/admin/grants", data={**base, "kind": "quota", "amount": "4", "perm": "hours", "printer": "zzz", "duration": "until", "until": "x"})
     with web.sm() as s:
         assert len(s.scalars(select(PermissionGrant)).all()) == 1 and s.scalars(select(QuotaGrant)).one().amount == 4
-    html = (await web.admin.get("/admin/requests")).text
+    html = (await web.admin.get("/admin/requests/grants")).text
     assert "+ colour printing" in html and "+4 jobs" in html
     await web.admin.post(f"/admin/permission-grants/{g.id}/revoke", data={"csrf_token": web.boss_token})
     assert notices_of(web.sm, web.ann, "grant_revoked") == [{"what": "permission", "perm": "color", "printer": None}]
@@ -403,12 +404,12 @@ async def test_ended_permission_grants_show_in_the_history_and_the_purge_button_
         s.add_all([PermissionGrant(user_id=web.ann, perm="color", valid_from=now - timedelta(days=9), valid_until=now - timedelta(days=1)),
                    PermissionGrant(user_id=web.ann, perm="one_sided", valid_from=now)])
         s.commit()
-    html = (await web.admin.get("/admin/requests")).text
+    html = (await web.admin.get("/admin/requests/history")).text
     assert "Delete ended grants" in html and "ended" in html
     await web.admin.post("/admin/grants/purge", data={"csrf_token": web.boss_token})
     with web.sm() as s:
         assert [g.perm for g in s.scalars(select(PermissionGrant))] == ["one_sided"]
-    assert "Delete ended grants" not in (await web.admin.get("/admin/requests")).text
+    assert "Delete ended grants" not in (await web.admin.get("/admin/requests/history")).text
 
 
 # ---------------------------------------------------------------- the database
@@ -446,7 +447,7 @@ async def test_a_permission_already_asked_for_is_not_offered_again(portal):
         grants_mod.create_permission_request(s, s.get(User, uid), "color", None, "posters", datetime.now(UTC))
     await portal_login(portal, "ann", "correct horse battery")
     me = (await portal.get("/me")).text
-    assert "request waiting" in me and "/me/request/permission?perm=color" not in me
+    assert "Request sent" in me and "/me/request/permission?perm=color" not in me
     assert "/me/request/permission?perm=one_sided" in me
     form = (await portal.get("/me/request/permission")).text
     assert 'value="color"' not in form and 'value="one_sided"' in form
@@ -459,7 +460,7 @@ async def test_a_permission_the_user_already_has_can_not_be_granted_and_the_form
     assert r.status_code == 303
     with web.sm() as s:
         assert not s.scalars(select(PermissionGrant)).all()
-    assert "already has every permission" in (await web.admin.get("/admin/requests")).text
+    assert "already has every permission" in (await web.admin.get("/admin/requests/grants")).text
     assert (await web.admin.get("/admin/requests/lacks?username=boss")).json() == {"perms": [], "printers": [], "metrics": []}
     with web.sm() as s:
         permissions.set_rule(s, SubjectType.user, web.boss, one_sided=False)

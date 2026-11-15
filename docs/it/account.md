@@ -35,7 +35,7 @@ Un gruppo si può marcare **richiedibile**: gli utenti possono allora chiedere d
 
 I sistemi operativi tengono le password di stampa in chiaro (per esempio `printers.conf` su Linux), perciò i client **non usano mai** la password di dominio: usano una **chiave di stampa personale**.
 
-- La crea l'utente in *Profilo → Crea una chiave* (un'etichetta per dispositivo). Si mostra **una volta**; si conserva solo come hash sha256 di 192 bit casuali. Vale **solo per stampare e scansionare**; non apre mai il portale.
+- La crea l'utente in *Dispositivi → Crea chiave* (un'etichetta per dispositivo). Si mostra **una volta**; si conserva solo come hash sha256 di 192 bit casuali. Vale **solo per stampare e scansionare**; non apre mai il portale.
 - **La durata la sceglie l'utente**: 1, 3 o 6 mesi, **1 anno (proposto)**, 1 anno e 6 mesi, 2 anni, oppure **una sola stampa**. Il massimo è `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` (90 giorni) per gli utenti RADIUS e `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` (730) per i locali; la tendina mostra solo ciò che ci sta. Un utente RADIUS deve rifare il login per averne un'altra,
   così chi lascia l'azienda smette di stampare alla scadenza.
 - **Chiave monouso**: vale per una sola stampa. Se nessuno la usa smette dopo `SPOOLSTEWARD_KEY_ONCE_HOURS` ore (24). Appena la stampa è accettata la chiave esce dall'elenco; per `SPOOLSTEWARD_KEY_ONCE_GRACE_SECONDS` secondi (120) può ancora chiedere lo stato del lavoro, non stamparne un altro. Una stampa respinta dalla quota non la consuma; una accettata ma poi non riuscita sì.
@@ -66,7 +66,7 @@ La pagina di modifica dell'utente mostra, come semplice testo, da dove l'account
 
 ## 9. Auto-registrazione
 
-Un amministratore può far creare alle persone il proprio account **locale**: si attiva **Registrazione** in *Utenti* (la finestra chiede modalità, per quanto resta aperta e quanti account ammette; al primo limite raggiunto si chiude). È un interruttore unico per tutti gli amministratori, spento di default, e ogni cambio finisce nel registro degli amministratori. La pagina di accesso mostra allora il link a `/register`.
+Un amministratore può far creare alle persone il proprio account **locale**: si apre in *Persone → Registrazione* (il modulo chiede modalità, per quanto resta aperta e quanti account ammette; al primo limite raggiunto si chiude). È un interruttore unico per tutti gli amministratori, spento di default, e ogni cambio finisce nel registro degli amministratori. La pagina di accesso mostra allora il link a `/register`.
 
 - La persona sceglie nome, password (due volte) e un gruppo tra quelli **richiedibili**. Mai un amministratore, mai un altro gruppo. Senza gruppi richiedibili la registrazione non si apre (e si chiude da sola se l'ultimo smette di esserlo).
 - **Aperta**: l'account funziona subito e la persona entra. **Con approvazione**: l'account nasce disabilitato e compare in *Richieste*; **Approva** lo abilita, **Rifiuta** lo elimina. Se nessuno decide entro `SPOOLSTEWARD_REQUEST_TTL_DAYS` viene eliminato. Quelli in attesa restano gestibili anche a registrazione spenta.

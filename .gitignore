@@ -32,7 +32,8 @@ tests/_out/
 /NOTE.md
 /TEST.md
 /.env.bak-*
-
+/SpoolSteward-design.md
+/SpoolSteward-modifiche.md
 # update.sh working folders
 /.update-new/
 /.update-prev/

@@ -122,3 +122,14 @@ async def test_the_real_portal_sends_them(portal):
     for name in ("x-content-type-options", "referrer-policy", "permissions-policy", "x-frame-options", "content-security-policy"):
         assert name in r.headers, name
     assert (await portal.get("/healthz")).headers["x-content-type-options"] == "nosniff"
+
+
+def test_no_template_writes_an_inline_style_or_handler():
+    """The Content-Security-Policy forbids them, so a template that wrote one would work in the tests and not in a browser:
+    this reads every template (the rendered pages are checked above, but only the ones with data in them)."""
+    from pathlib import Path
+
+    bad = re.compile(r'<style|\sstyle\s*=|\son[a-z]+\s*=|javascript:')
+    for t in sorted((Path(__file__).resolve().parent.parent / "spoolsteward" / "admin" / "templates").glob("*.html")):
+        found = bad.search(t.read_text())
+        assert found is None, f"{t.name}: {t.read_text()[max(0, found.start() - 40):found.end() + 40]!r}"
