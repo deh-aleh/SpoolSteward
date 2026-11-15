@@ -18,7 +18,7 @@ from tests.conftest import (
 )
 
 GOOD = "correct horse battery"
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
+NOW = datetime.now(UTC).replace(microsecond=0)  # the real clock: the gateway checks keys with it, a fixed date would one day be past the expiry
 
 
 def basic(u, p):

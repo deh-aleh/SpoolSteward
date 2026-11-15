@@ -6,9 +6,10 @@
 .langsw a { color:var(--muted) } .langsw a:hover { color:var(--fg) }
 .docwrap { display:grid; grid-template-columns:minmax(0,1fr); gap:24px }
 .doctoc { font-size:13px } .doctoc ul { list-style:none; margin:0; padding:0 } .doctoc li { margin:0 } .doctoc a { display:block; padding:5px 0; color:var(--muted); text-decoration:none; border-bottom:1px solid var(--line) } .doctoc a:hover { color:var(--fg) }
-@media (min-width:1000px) { .docwrap { grid-template-columns:200px minmax(0,68ch); gap:48px } .doctoc { position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto } }
+@media (min-width:1000px) { .docwrap { grid-template-columns:220px minmax(0,1fr); gap:48px } .doctoc { position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto } }
 .doc:has(.doctiles) { max-width:none }
-.doc { line-height:1.6; overflow-wrap:anywhere; font-size:16px; max-width:68ch }
+.doc { line-height:1.6; overflow-wrap:anywhere; font-size:16px }
+.docwrap .doc { max-width:none }
 .doc h1 { font:600 24px/1.2 var(--head); margin:4px 0 14px } .doc h2 { font-size:19px; margin:32px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--line) } .doc h3 { font-size:16px; margin:22px 0 6px }
 .doc h4, .doc h5, .doc h6 { font-size:15px; margin:14px 0 6px }
 .doc h1, .doc h2, .doc h3, .doc h4 { scroll-margin-top:24px }
